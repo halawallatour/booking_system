@@ -1,0 +1,350 @@
+'use client';
+
+import { useEffect, useState, use } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
+import TourModal from '@/components/TourModal';
+import HotelModal from '@/components/HotelModal';
+
+export default function EditCustomerPage({ params }) {
+  const { id: itemId } = use(params);
+  const router = useRouter();
+  const [dropdowns, setDropdowns] = useState({});
+  const [form, setForm] = useState({ guestName: '', nationality: '', customerType: '', customerDetail: '', salePerson: '' });
+  const [customerId, setCustomerId] = useState(null);
+  const [tourBlocks, setTourBlocks] = useState([]);
+  const [hotelBlocks, setHotelBlocks] = useState([]);
+  const [showTourModal, setShowTourModal] = useState(false);
+  const [showHotelModal, setShowHotelModal] = useState(false);
+  const [editingTourIdx, setEditingTourIdx] = useState(null);
+  const [editingHotelIdx, setEditingHotelIdx] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDropdowns();
+    loadCustomer();
+  }, []);
+
+  async function loadDropdowns() {
+    const { data } = await supabase.from('dropdowns').select('*').order('sort_order');
+    const grouped = {};
+    (data || []).forEach(d => {
+      if (!grouped[d.category]) grouped[d.category] = [];
+      grouped[d.category].push(d.value);
+    });
+    setDropdowns(grouped);
+  }
+
+  async function loadCustomer() {
+    const { data: cust } = await supabase.from('customers').select('*').eq('item_id', itemId).single();
+    if (!cust) {
+      toast.error('Customer not found');
+      router.push('/customers');
+      return;
+    }
+
+    setCustomerId(cust.id);
+    setForm({
+      guestName: cust.guest_name || '',
+      nationality: cust.nationality || '',
+      customerType: cust.customer_type || '',
+      customerDetail: cust.customer_detail || '',
+      salePerson: cust.sale_person || '',
+    });
+
+    const { data: toursData } = await supabase.from('tours').select('*').eq('customer_id', cust.id).eq('status', 'active');
+    setTourBlocks((toursData || []).map(t => ({
+      dbId: t.id,
+      tourId: t.tour_id,
+      tourDate: t.tour_date || '',
+      tourDetail: t.tour_detail || '',
+      tourName: t.tour_name || '',
+      companyName: t.company_name || '',
+      adult: t.adult || '',
+      child: t.child || '',
+      pickupTime: t.pickup_time || '',
+      hotelName: t.hotel_name || '',
+      roomNumber: t.room_number || '',
+      note: t.note || '',
+      operatorContact: t.operator_contact || '',
+      saleAmount: t.sale_amount || '',
+      netAmount: t.net_amount || '',
+    })));
+
+    const { data: hotelsData } = await supabase.from('hotels').select('*').eq('customer_id', cust.id).eq('status', 'active');
+    setHotelBlocks((hotelsData || []).map(h => ({
+      dbId: h.id,
+      hotelId: h.hotel_id,
+      checkIn: h.check_in || '',
+      checkOut: h.check_out || '',
+      totalNight: h.total_night || '',
+      hotelName: h.hotel_name || '',
+      roomName: h.room_name || '',
+      totalRoom: h.total_room || 1,
+      confirmationNumber: h.confirmation_number || '',
+      bookingType: h.booking_type || '',
+      note: h.note || '',
+      breakfast: h.breakfast || '',
+      saleAmount: h.sale_amount || '',
+      netAmount: h.net_amount || '',
+    })));
+
+    setLoading(false);
+  }
+
+  function handleChange(e) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function addTour(tourData) {
+    if (editingTourIdx !== null) {
+      setTourBlocks(prev => prev.map((t, i) => i === editingTourIdx ? { ...t, ...tourData } : t));
+      setEditingTourIdx(null);
+    } else {
+      setTourBlocks(prev => [...prev, tourData]);
+    }
+    setShowTourModal(false);
+  }
+
+  function addHotel(hotelData) {
+    if (editingHotelIdx !== null) {
+      setHotelBlocks(prev => prev.map((h, i) => i === editingHotelIdx ? { ...h, ...hotelData } : h));
+      setEditingHotelIdx(null);
+    } else {
+      setHotelBlocks(prev => [...prev, hotelData]);
+    }
+    setShowHotelModal(false);
+  }
+
+  async function removeTour(idx) {
+    const t = tourBlocks[idx];
+    if (t.dbId) {
+      const r = await Swal.fire({ title: 'Delete this tour?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+      if (!r.isConfirmed) return;
+      await supabase.from('tours').delete().eq('id', t.dbId);
+    }
+    setTourBlocks(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function removeHotel(idx) {
+    const h = hotelBlocks[idx];
+    if (h.dbId) {
+      const r = await Swal.fire({ title: 'Delete this hotel?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+      if (!r.isConfirmed) return;
+      await supabase.from('hotels').delete().eq('id', h.dbId);
+    }
+    setHotelBlocks(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.guestName.trim()) { toast.error('Guest name is required'); return; }
+    setSaving(true);
+
+    try {
+      await supabase.from('customers').update({
+        guest_name: form.guestName.trim(),
+        nationality: form.nationality,
+        customer_type: form.customerType,
+        customer_detail: form.customerDetail,
+        sale_person: form.salePerson,
+        updated_at: new Date().toISOString(),
+      }).eq('id', customerId);
+
+      for (const t of tourBlocks) {
+        const tourRow = {
+          tour_date: t.tourDate || null,
+          tour_detail: t.tourDetail,
+          tour_name: t.tourName,
+          company_name: t.companyName,
+          adult: parseInt(t.adult) || 0,
+          child: parseInt(t.child) || 0,
+          pickup_time: t.pickupTime,
+          hotel_name: t.hotelName,
+          room_number: t.roomNumber,
+          note: t.note,
+          operator_contact: t.operatorContact,
+          sale_amount: parseFloat(t.saleAmount) || 0,
+          net_amount: parseFloat(t.netAmount) || 0,
+        };
+        if (t.dbId) {
+          await supabase.from('tours').update(tourRow).eq('id', t.dbId);
+        } else {
+          const { data: tourIdData } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' });
+          await supabase.from('tours').insert({ ...tourRow, tour_id: tourIdData, customer_id: customerId });
+        }
+      }
+
+      for (const h of hotelBlocks) {
+        const hotelRow = {
+          check_in: h.checkIn || null,
+          check_out: h.checkOut || null,
+          total_night: parseInt(h.totalNight) || 0,
+          hotel_name: h.hotelName,
+          room_name: h.roomName,
+          total_room: parseInt(h.totalRoom) || 1,
+          confirmation_number: h.confirmationNumber,
+          booking_type: h.bookingType,
+          note: h.note,
+          breakfast: h.breakfast,
+          sale_amount: parseFloat(h.saleAmount) || 0,
+          net_amount: parseFloat(h.netAmount) || 0,
+        };
+        if (h.dbId) {
+          await supabase.from('hotels').update(hotelRow).eq('id', h.dbId);
+        } else {
+          const { data: hotelIdData } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' });
+          await supabase.from('hotels').insert({ ...hotelRow, hotel_id: hotelIdData, customer_id: customerId });
+        }
+      }
+
+      await Swal.fire({ title: 'Updated!', icon: 'success', timer: 1500, showConfirmButton: false });
+      router.push('/customers');
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteCustomer() {
+    const r = await Swal.fire({ title: 'Delete this customer?', text: 'All tours and hotels will be deleted.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+    if (!r.isConfirmed) return;
+
+    await supabase.from('tours').delete().eq('customer_id', customerId);
+    await supabase.from('hotels').delete().eq('customer_id', customerId);
+    await supabase.from('customers').delete().eq('id', customerId);
+
+    await Swal.fire({ title: 'Deleted', icon: 'success', timer: 1500, showConfirmButton: false });
+    router.push('/customers');
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-3 border-[var(--color-brand)] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/customers')} className="btn btn-ghost">← Back</button>
+          <h2 className="text-2xl font-bold">Edit Customer</h2>
+          <span className="badge badge-tour">{itemId}</span>
+        </div>
+        <button onClick={handleDeleteCustomer} className="btn btn-danger">🗑️ Delete</button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="card p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="label">Guest Name</label>
+            <input className="input" name="guestName" value={form.guestName} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="label">Nationality</label>
+            <select className="input" name="nationality" value={form.nationality} onChange={handleChange}>
+              <option value="">--- Choose ---</option>
+              {(dropdowns.nationality || []).map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Type of Customer</label>
+            <select className="input" name="customerType" value={form.customerType} onChange={handleChange}>
+              <option value="">--- Choose ---</option>
+              {(dropdowns.customer_type || []).map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Customer Detail</label>
+            <input className="input" name="customerDetail" value={form.customerDetail} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="label">Sale Person</label>
+            <select className="input" name="salePerson" value={form.salePerson} onChange={handleChange}>
+              <option value="">--- Choose ---</option>
+              {(dropdowns.sale_person || []).map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <hr className="border-[var(--color-border)]" />
+
+        <div className="flex gap-2">
+          <button type="button" className="btn btn-ghost" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>
+            ➕ Add Tour
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>
+            🏨 Add Hotel
+          </button>
+        </div>
+
+        {tourBlocks.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🗺️ Tour Bookings</h4>
+            {tourBlocks.map((t, i) => (
+              <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+                <div>
+                  <p className="font-medium">{t.tourName || 'Tour'} — {t.tourDate || 'No date'}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">{t.companyName} · {t.adult || 0}A {t.child || 0}C · {t.pickupTime || '-'}</p>
+                  {t.tourId && <p className="text-xs text-[var(--color-text-muted)] mt-1">{t.tourId}</p>}
+                </div>
+                <div className="flex gap-1">
+                  <button type="button" className="btn btn-ghost text-xs px-2 py-1" onClick={() => { setEditingTourIdx(i); setShowTourModal(true); }}>✏️</button>
+                  <button type="button" className="btn btn-ghost text-xs px-2 py-1 text-[var(--color-danger)]" onClick={() => removeTour(i)}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {hotelBlocks.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🏨 Hotel Bookings</h4>
+            {hotelBlocks.map((h, i) => (
+              <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+                <div>
+                  <p className="font-medium">{h.hotelName || 'Hotel'} — {h.roomName || ''}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">{h.checkIn || '?'} → {h.checkOut || '?'} · {h.totalNight || 0}N · {h.breakfast || '-'}</p>
+                  {h.hotelId && <p className="text-xs text-[var(--color-text-muted)] mt-1">{h.hotelId}</p>}
+                </div>
+                <div className="flex gap-1">
+                  <button type="button" className="btn btn-ghost text-xs px-2 py-1" onClick={() => { setEditingHotelIdx(i); setShowHotelModal(true); }}>✏️</button>
+                  <button type="button" className="btn btn-ghost text-xs px-2 py-1 text-[var(--color-danger)]" onClick={() => removeHotel(i)}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="text-right pt-4">
+          <button type="submit" disabled={saving} className="btn btn-success text-base px-8 py-3">
+            {saving ? 'Saving...' : '💾 Save Changes'}
+          </button>
+        </div>
+      </form>
+
+      {showTourModal && (
+        <TourModal
+          dropdowns={dropdowns}
+          initial={editingTourIdx !== null ? tourBlocks[editingTourIdx] : null}
+          onSave={addTour}
+          onClose={() => { setShowTourModal(false); setEditingTourIdx(null); }}
+        />
+      )}
+
+      {showHotelModal && (
+        <HotelModal
+          dropdowns={dropdowns}
+          initial={editingHotelIdx !== null ? hotelBlocks[editingHotelIdx] : null}
+          onSave={addHotel}
+          onClose={() => { setShowHotelModal(false); setEditingHotelIdx(null); }}
+        />
+      )}
+    </div>
+  );
+}
