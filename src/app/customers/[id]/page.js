@@ -23,10 +23,7 @@ export default function EditCustomerPage({ params }) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDropdowns();
-    loadCustomer();
-  }, []);
+  useEffect(() => { loadDropdowns(); loadCustomer(); }, []);
 
   async function loadDropdowns() {
     const { data } = await supabase.from('dropdowns').select('*').order('sort_order');
@@ -40,64 +37,39 @@ export default function EditCustomerPage({ params }) {
 
   async function loadCustomer() {
     const { data: cust } = await supabase.from('customers').select('*').eq('item_id', itemId).single();
-    if (!cust) {
-      toast.error('Customer not found');
-      router.push('/customers');
-      return;
-    }
+    if (!cust) { toast.error('ไม่พบข้อมูลลูกค้า'); router.push('/'); return; }
 
     setCustomerId(cust.id);
     setForm({
-      guestName: cust.guest_name || '',
-      nationality: cust.nationality || '',
-      customerType: cust.customer_type || '',
-      customerDetail: cust.customer_detail || '',
+      guestName: cust.guest_name || '', nationality: cust.nationality || '',
+      customerType: cust.customer_type || '', customerDetail: cust.customer_detail || '',
       salePerson: cust.sale_person || '',
     });
 
     const { data: toursData } = await supabase.from('tours').select('*').eq('customer_id', cust.id).eq('status', 'active');
     setTourBlocks((toursData || []).map(t => ({
-      dbId: t.id,
-      tourId: t.tour_id,
-      tourDate: t.tour_date || '',
-      tourDetail: t.tour_detail || '',
-      tourName: t.tour_name || '',
-      companyName: t.company_name || '',
-      adult: t.adult || '',
-      child: t.child || '',
-      pickupTime: t.pickup_time || '',
-      hotelName: t.hotel_name || '',
-      roomNumber: t.room_number || '',
-      note: t.note || '',
-      operatorContact: t.operator_contact || '',
-      saleAmount: t.sale_amount || '',
-      netAmount: t.net_amount || '',
+      dbId: t.id, tourId: t.tour_id,
+      tourDate: t.tour_date || '', tourDetail: t.tour_detail || '', tourName: t.tour_name || '',
+      companyName: t.company_name || '', adult: t.adult || '', child: t.child || '',
+      pickupTime: t.pickup_time || '', hotelName: t.hotel_name || '', roomNumber: t.room_number || '',
+      note: t.note || '', operatorContact: t.operator_contact || '',
+      saleAmount: t.sale_amount || '', netAmount: t.net_amount || '',
     })));
 
     const { data: hotelsData } = await supabase.from('hotels').select('*').eq('customer_id', cust.id).eq('status', 'active');
     setHotelBlocks((hotelsData || []).map(h => ({
-      dbId: h.id,
-      hotelId: h.hotel_id,
-      checkIn: h.check_in || '',
-      checkOut: h.check_out || '',
-      totalNight: h.total_night || '',
-      hotelName: h.hotel_name || '',
-      roomName: h.room_name || '',
-      totalRoom: h.total_room || 1,
-      confirmationNumber: h.confirmation_number || '',
-      bookingType: h.booking_type || '',
-      note: h.note || '',
-      breakfast: h.breakfast || '',
-      saleAmount: h.sale_amount || '',
-      netAmount: h.net_amount || '',
+      dbId: h.id, hotelId: h.hotel_id,
+      checkIn: h.check_in || '', checkOut: h.check_out || '', totalNight: h.total_night || '',
+      hotelName: h.hotel_name || '', roomName: h.room_name || '', totalRoom: h.total_room || 1,
+      confirmationNumber: h.confirmation_number || '', bookingType: h.booking_type || '',
+      note: h.note || '', breakfast: h.breakfast || '',
+      saleAmount: h.sale_amount || '', netAmount: h.net_amount || '',
     })));
 
     setLoading(false);
   }
 
-  function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+  function handleChange(e) { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); }
 
   function addTour(tourData) {
     if (editingTourIdx !== null) {
@@ -122,7 +94,7 @@ export default function EditCustomerPage({ params }) {
   async function removeTour(idx) {
     const t = tourBlocks[idx];
     if (t.dbId) {
-      const r = await Swal.fire({ title: 'Delete this tour?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+      const r = await Swal.fire({ title: 'ลบ Tour นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
       if (!r.isConfirmed) return;
       await supabase.from('tours').delete().eq('id', t.dbId);
     }
@@ -132,7 +104,7 @@ export default function EditCustomerPage({ params }) {
   async function removeHotel(idx) {
     const h = hotelBlocks[idx];
     if (h.dbId) {
-      const r = await Swal.fire({ title: 'Delete this hotel?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+      const r = await Swal.fire({ title: 'ลบ Hotel นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
       if (!r.isConfirmed) return;
       await supabase.from('hotels').delete().eq('id', h.dbId);
     }
@@ -141,34 +113,22 @@ export default function EditCustomerPage({ params }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.guestName.trim()) { toast.error('Guest name is required'); return; }
+    if (!form.guestName.trim()) { toast.error('กรุณาใส่ชื่อลูกค้า'); return; }
     setSaving(true);
-
     try {
       await supabase.from('customers').update({
-        guest_name: form.guestName.trim(),
-        nationality: form.nationality,
-        customer_type: form.customerType,
-        customer_detail: form.customerDetail,
-        sale_person: form.salePerson,
-        updated_at: new Date().toISOString(),
+        guest_name: form.guestName.trim(), nationality: form.nationality,
+        customer_type: form.customerType, customer_detail: form.customerDetail,
+        sale_person: form.salePerson, updated_at: new Date().toISOString(),
       }).eq('id', customerId);
 
       for (const t of tourBlocks) {
         const tourRow = {
-          tour_date: t.tourDate || null,
-          tour_detail: t.tourDetail,
-          tour_name: t.tourName,
-          company_name: t.companyName,
-          adult: parseInt(t.adult) || 0,
-          child: parseInt(t.child) || 0,
-          pickup_time: t.pickupTime,
-          hotel_name: t.hotelName,
-          room_number: t.roomNumber,
-          note: t.note,
-          operator_contact: t.operatorContact,
-          sale_amount: parseFloat(t.saleAmount) || 0,
-          net_amount: parseFloat(t.netAmount) || 0,
+          tour_date: t.tourDate || null, tour_detail: t.tourDetail, tour_name: t.tourName,
+          company_name: t.companyName, adult: parseInt(t.adult) || 0, child: parseInt(t.child) || 0,
+          pickup_time: t.pickupTime, hotel_name: t.hotelName, room_number: t.roomNumber,
+          note: t.note, operator_contact: t.operatorContact,
+          sale_amount: parseFloat(t.saleAmount) || 0, net_amount: parseFloat(t.netAmount) || 0,
         };
         if (t.dbId) {
           await supabase.from('tours').update(tourRow).eq('id', t.dbId);
@@ -180,18 +140,11 @@ export default function EditCustomerPage({ params }) {
 
       for (const h of hotelBlocks) {
         const hotelRow = {
-          check_in: h.checkIn || null,
-          check_out: h.checkOut || null,
-          total_night: parseInt(h.totalNight) || 0,
-          hotel_name: h.hotelName,
-          room_name: h.roomName,
-          total_room: parseInt(h.totalRoom) || 1,
-          confirmation_number: h.confirmationNumber,
-          booking_type: h.bookingType,
-          note: h.note,
-          breakfast: h.breakfast,
-          sale_amount: parseFloat(h.saleAmount) || 0,
-          net_amount: parseFloat(h.netAmount) || 0,
+          check_in: h.checkIn || null, check_out: h.checkOut || null,
+          total_night: parseInt(h.totalNight) || 0, hotel_name: h.hotelName, room_name: h.roomName,
+          total_room: parseInt(h.totalRoom) || 1, confirmation_number: h.confirmationNumber,
+          booking_type: h.bookingType, note: h.note, breakfast: h.breakfast,
+          sale_amount: parseFloat(h.saleAmount) || 0, net_amount: parseFloat(h.netAmount) || 0,
         };
         if (h.dbId) {
           await supabase.from('hotels').update(hotelRow).eq('id', h.dbId);
@@ -201,8 +154,8 @@ export default function EditCustomerPage({ params }) {
         }
       }
 
-      await Swal.fire({ title: 'Updated!', icon: 'success', timer: 1500, showConfirmButton: false });
-      router.push('/customers');
+      await Swal.fire({ title: 'บันทึกสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false });
+      router.push('/');
     } catch (err) {
       toast.error('Error: ' + err.message);
     } finally {
@@ -211,15 +164,13 @@ export default function EditCustomerPage({ params }) {
   }
 
   async function handleDeleteCustomer() {
-    const r = await Swal.fire({ title: 'Delete this customer?', text: 'All tours and hotels will be deleted.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' });
+    const r = await Swal.fire({ title: 'ลบลูกค้านี้?', text: 'Tour และ Hotel ทั้งหมดจะถูกลบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
     if (!r.isConfirmed) return;
-
     await supabase.from('tours').delete().eq('customer_id', customerId);
     await supabase.from('hotels').delete().eq('customer_id', customerId);
     await supabase.from('customers').delete().eq('id', customerId);
-
-    await Swal.fire({ title: 'Deleted', icon: 'success', timer: 1500, showConfirmButton: false });
-    router.push('/customers');
+    await Swal.fire({ title: 'ลบเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
+    router.push('/');
   }
 
   if (loading) return (
@@ -232,41 +183,42 @@ export default function EditCustomerPage({ params }) {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/customers')} className="btn btn-ghost">← Back</button>
-          <h2 className="text-2xl font-bold">Edit Customer</h2>
-          <span className="badge badge-tour">{itemId}</span>
+          <button onClick={() => router.push('/')} className="btn btn-ghost">← กลับ</button>
+          <h2 className="text-2xl font-bold">แก้ไขลูกค้า</h2>
+          <span className="badge badge-tour font-semibold">{itemId}</span>
         </div>
-        <button onClick={handleDeleteCustomer} className="btn btn-danger">🗑️ Delete</button>
+        <button onClick={handleDeleteCustomer} className="btn btn-danger">🗑️ ลบลูกค้า</button>
       </div>
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
+        <h3 className="font-semibold text-base text-[var(--color-text-secondary)]">ข้อมูลลูกค้า</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="label">Guest Name</label>
+            <label className="label">ชื่อลูกค้า (Guest Name)</label>
             <input className="input" name="guestName" value={form.guestName} onChange={handleChange} />
           </div>
           <div>
-            <label className="label">Nationality</label>
+            <label className="label">สัญชาติ (Nationality)</label>
             <select className="input" name="nationality" value={form.nationality} onChange={handleChange}>
-              <option value="">--- Choose ---</option>
+              <option value="">--- เลือก ---</option>
               {(dropdowns.nationality || []).map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Type of Customer</label>
+            <label className="label">ประเภทลูกค้า</label>
             <select className="input" name="customerType" value={form.customerType} onChange={handleChange}>
-              <option value="">--- Choose ---</option>
+              <option value="">--- เลือก ---</option>
               {(dropdowns.customer_type || []).map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Customer Detail</label>
+            <label className="label">รายละเอียดลูกค้า</label>
             <input className="input" name="customerDetail" value={form.customerDetail} onChange={handleChange} />
           </div>
           <div>
-            <label className="label">Sale Person</label>
+            <label className="label">พนักงานขาย</label>
             <select className="input" name="salePerson" value={form.salePerson} onChange={handleChange}>
-              <option value="">--- Choose ---</option>
+              <option value="">--- เลือก ---</option>
               {(dropdowns.sale_person || []).map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
@@ -275,12 +227,8 @@ export default function EditCustomerPage({ params }) {
         <hr className="border-[var(--color-border)]" />
 
         <div className="flex gap-2">
-          <button type="button" className="btn btn-ghost" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>
-            ➕ Add Tour
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>
-            🏨 Add Hotel
-          </button>
+          <button type="button" className="btn btn-outline-primary" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>➕ เพิ่ม Tour</button>
+          <button type="button" className="btn btn-outline-primary" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>🏨 เพิ่ม Hotel</button>
         </div>
 
         {tourBlocks.length > 0 && (
@@ -294,8 +242,8 @@ export default function EditCustomerPage({ params }) {
                   {t.tourId && <p className="text-xs text-[var(--color-text-muted)] mt-1">{t.tourId}</p>}
                 </div>
                 <div className="flex gap-1">
-                  <button type="button" className="btn btn-ghost text-xs px-2 py-1" onClick={() => { setEditingTourIdx(i); setShowTourModal(true); }}>✏️</button>
-                  <button type="button" className="btn btn-ghost text-xs px-2 py-1 text-[var(--color-danger)]" onClick={() => removeTour(i)}>✕</button>
+                  <button type="button" className="action-btn" onClick={() => { setEditingTourIdx(i); setShowTourModal(true); }}>✏️</button>
+                  <button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => removeTour(i)}>✕</button>
                 </div>
               </div>
             ))}
@@ -313,8 +261,8 @@ export default function EditCustomerPage({ params }) {
                   {h.hotelId && <p className="text-xs text-[var(--color-text-muted)] mt-1">{h.hotelId}</p>}
                 </div>
                 <div className="flex gap-1">
-                  <button type="button" className="btn btn-ghost text-xs px-2 py-1" onClick={() => { setEditingHotelIdx(i); setShowHotelModal(true); }}>✏️</button>
-                  <button type="button" className="btn btn-ghost text-xs px-2 py-1 text-[var(--color-danger)]" onClick={() => removeHotel(i)}>✕</button>
+                  <button type="button" className="action-btn" onClick={() => { setEditingHotelIdx(i); setShowHotelModal(true); }}>✏️</button>
+                  <button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => removeHotel(i)}>✕</button>
                 </div>
               </div>
             ))}
@@ -323,27 +271,18 @@ export default function EditCustomerPage({ params }) {
 
         <div className="text-right pt-4">
           <button type="submit" disabled={saving} className="btn btn-success text-base px-8 py-3">
-            {saving ? 'Saving...' : '💾 Save Changes'}
+            {saving ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}
           </button>
         </div>
       </form>
 
       {showTourModal && (
-        <TourModal
-          dropdowns={dropdowns}
-          initial={editingTourIdx !== null ? tourBlocks[editingTourIdx] : null}
-          onSave={addTour}
-          onClose={() => { setShowTourModal(false); setEditingTourIdx(null); }}
-        />
+        <TourModal dropdowns={dropdowns} initial={editingTourIdx !== null ? tourBlocks[editingTourIdx] : null}
+          onSave={addTour} onClose={() => { setShowTourModal(false); setEditingTourIdx(null); }} />
       )}
-
       {showHotelModal && (
-        <HotelModal
-          dropdowns={dropdowns}
-          initial={editingHotelIdx !== null ? hotelBlocks[editingHotelIdx] : null}
-          onSave={addHotel}
-          onClose={() => { setShowHotelModal(false); setEditingHotelIdx(null); }}
-        />
+        <HotelModal dropdowns={dropdowns} initial={editingHotelIdx !== null ? hotelBlocks[editingHotelIdx] : null}
+          onSave={addHotel} onClose={() => { setShowHotelModal(false); setEditingHotelIdx(null); }} />
       )}
     </div>
   );

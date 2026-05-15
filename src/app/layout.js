@@ -1,5 +1,6 @@
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Tour Booking System',
@@ -16,8 +17,8 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' } }} />
-        <Sidebar />
-        <main className="ml-0 md:ml-64 min-h-screen p-4 md:p-8">
+        <TopNav />
+        <main className="max-w-[1320px] mx-auto px-4 sm:px-6 py-6">
           {children}
         </main>
       </body>
@@ -25,40 +26,27 @@ export default function RootLayout({ children }) {
   );
 }
 
-function Sidebar() {
+function TopNav() {
   return (
-    <>
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-[var(--color-border)] flex-col z-40">
-        <div className="px-6 py-6 border-b border-[var(--color-border)]">
-          <h1 className="text-xl font-bold text-[var(--color-brand)]">🌴 Tour Booking</h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Management System</p>
-        </div>
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          <SidebarLink href="/" icon="📊" label="Dashboard" />
-          <SidebarLink href="/customers" icon="👥" label="Customers" />
+    <header className="sticky top-0 z-50 bg-white border-b border-[var(--color-border)]">
+      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-8">
+        <Link href="/" className="font-bold text-lg tracking-tight text-[var(--color-brand-dark)] shrink-0">
+          TOUR BOOKING
+        </Link>
+        <nav className="flex items-center gap-1">
+          <NavLink href="/" icon="📋" label="Voucher Management" />
+          <NavLink href="/dashboard" icon="📊" label="Executive Dashboard" />
         </nav>
-        <div className="px-6 py-4 border-t border-[var(--color-border)]">
-          <p className="text-xs text-[var(--color-text-muted)]">v1.0 — Supabase + Next.js</p>
-        </div>
-      </aside>
-
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-[var(--color-border)] flex items-center px-4 z-40">
-        <h1 className="text-lg font-bold text-[var(--color-brand)]">🌴 Tour Booking</h1>
-        <div className="ml-auto flex gap-2">
-          <a href="/" className="btn-ghost btn text-xs px-3 py-1.5">📊</a>
-          <a href="/customers" className="btn-ghost btn text-xs px-3 py-1.5">👥</a>
-        </div>
       </div>
-      <div className="md:hidden h-14" />
-    </>
+    </header>
   );
 }
 
-function SidebarLink({ href, icon, label }) {
+function NavLink({ href, icon, label }) {
   return (
-    <a href={href} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-colors">
-      <span className="text-lg">{icon}</span>
-      {label}
-    </a>
+    <Link href={href} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors rounded-lg hover:bg-[var(--color-surface-hover)]">
+      <span>{icon}</span>
+      <span className="hidden sm:inline">{label}</span>
+    </Link>
   );
 }
