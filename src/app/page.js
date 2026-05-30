@@ -11,6 +11,7 @@ export default function VoucherManagementPage() {
   const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState({ salesToday: 0, salesMonth: 0, profitTotal: 0, totalCustomers: 0 });
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,24 +32,27 @@ export default function VoucherManagementPage() {
       setStats({ salesToday, salesMonth, profitTotal, totalCustomers: custCount || 0 });
 
       let query = supabase.from('customers').select('*, tours(*), hotels(*)', { count: 'exact' }).order('created_at', { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-      if (search.trim()) query = query.or(`guest_name.ilike.%${search.trim()}%,item_id.ilike.%${search.trim()}%`);
+      // strip characters that have special meaning in PostgREST's .or() filter so a stray "," or "()" can't break the request
+      const term = appliedSearch.replace(/[,()]/g, ' ').trim();
+      if (term) query = query.or(`guest_name.ilike.%${term}%,item_id.ilike.%${term}%`);
       const { data, count } = await query;
       setCustomers(data || []);
       setTotalCount(count || 0);
     } catch (err) { setConnected(false); }
     setLoading(false);
-  }, [page, search]);
+  }, [page, appliedSearch]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  function handleSearch(e) { e.preventDefault(); setPage(0); loadData(); }
+  // commit the search box into appliedSearch and reset to page 0; the effect above re-fetches once
+  function handleSearch(e) { e.preventDefault(); setPage(0); setAppliedSearch(search.trim()); }
 
   async function handleDelete(cust) {
     const r = await Swal.fire({ title: 'ลบลูกค้า?', text: `${cust.item_id} — ${cust.guest_name}`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
     if (!r.isConfirmed) return;
-    await supabase.from('tours').delete().eq('customer_id', cust.id);
-    await supabase.from('hotels').delete().eq('customer_id', cust.id);
-    await supabase.from('customers').delete().eq('id', cust.id);
+    // tours/hotels are removed automatically via the customer_id FK (ON DELETE CASCADE)
+    const { error } = await supabase.from('customers').delete().eq('id', cust.id);
+    if (error) { toast.error('ลบไม่สำเร็จ: ' + error.message); return; }
     toast.success('ลบเรียบร้อย');
     loadData();
   }
@@ -87,7 +91,7 @@ export default function VoucherManagementPage() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">🔍</span>
                 <input type="text" className="input pl-9" placeholder="ค้นหารหัส, ชื่อลูกค้า..." value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-              {search && <button type="button" className="btn btn-ghost text-sm px-3 py-2" onClick={() => { setSearch(''); setPage(0); }}>✕</button>}
+              {search && <button type="button" className="btn btn-ghost text-sm px-3 py-2" onClick={() => { setSearch(''); setAppliedSearch(''); setPage(0); }}>✕</button>}
             </form>
           </div>
         </div>

@@ -24,18 +24,30 @@ export default function EditCustomerPage({ params }) {
 
   useEffect(() => { loadDropdowns(); loadCustomer(); }, []);
 
+  // honour the "เพิ่มรายการ" (＋) link from the home page: /customers/<id>?add=true auto-opens the Tour modal
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('add') === 'true') { setEditingTourIdx(null); setShowTourModal(true); }
+  }, [loading]);
+
   async function loadDropdowns() { const { data } = await supabase.from('dropdowns').select('*').order('sort_order'); const grouped = {}; (data || []).forEach(d => { if (!grouped[d.category]) grouped[d.category] = []; grouped[d.category].push(d.value); }); setDropdowns(grouped); }
 
   async function loadCustomer() {
-    const { data: cust } = await supabase.from('customers').select('*').eq('item_id', itemId).single();
-    if (!cust) { toast.error('ไม่พบข้อมูลลูกค้า'); router.push('/'); return; }
-    setCustomerId(cust.id);
-    setForm({ guestName: cust.guest_name || '', nationality: cust.nationality || '', customerType: cust.customer_type || '', customerDetail: cust.customer_detail || '', salePerson: cust.sale_person || '' });
-    const { data: toursData } = await supabase.from('tours').select('*').eq('customer_id', cust.id).eq('status', 'active');
-    setTourBlocks((toursData || []).map(t => ({ dbId: t.id, tourId: t.tour_id, tourDate: t.tour_date || '', tourDetail: t.tour_detail || '', tourName: t.tour_name || '', companyName: t.company_name || '', adult: t.adult || '', child: t.child || '', pickupTime: t.pickup_time || '', hotelName: t.hotel_name || '', roomNumber: t.room_number || '', note: t.note || '', operatorContact: t.operator_contact || '', saleAmount: t.sale_amount || '', netAmount: t.net_amount || '' })));
-    const { data: hotelsData } = await supabase.from('hotels').select('*').eq('customer_id', cust.id).eq('status', 'active');
-    setHotelBlocks((hotelsData || []).map(h => ({ dbId: h.id, hotelId: h.hotel_id, checkIn: h.check_in || '', checkOut: h.check_out || '', totalNight: h.total_night || '', hotelName: h.hotel_name || '', roomName: h.room_name || '', totalRoom: h.total_room || 1, confirmationNumber: h.confirmation_number || '', bookingType: h.booking_type || '', note: h.note || '', breakfast: h.breakfast || '', saleAmount: h.sale_amount || '', netAmount: h.net_amount || '' })));
-    setLoading(false);
+    try {
+      const { data: cust } = await supabase.from('customers').select('*').eq('item_id', itemId).single();
+      if (!cust) { toast.error('ไม่พบข้อมูลลูกค้า'); router.push('/'); return; }
+      setCustomerId(cust.id);
+      setForm({ guestName: cust.guest_name || '', nationality: cust.nationality || '', customerType: cust.customer_type || '', customerDetail: cust.customer_detail || '', salePerson: cust.sale_person || '' });
+      const { data: toursData } = await supabase.from('tours').select('*').eq('customer_id', cust.id).eq('status', 'active');
+      setTourBlocks((toursData || []).map(t => ({ dbId: t.id, tourId: t.tour_id, tourDate: t.tour_date || '', tourDetail: t.tour_detail || '', tourName: t.tour_name || '', companyName: t.company_name || '', adult: t.adult || '', child: t.child || '', pickupTime: t.pickup_time || '', hotelName: t.hotel_name || '', roomNumber: t.room_number || '', note: t.note || '', operatorContact: t.operator_contact || '', saleAmount: t.sale_amount || '', netAmount: t.net_amount || '' })));
+      const { data: hotelsData } = await supabase.from('hotels').select('*').eq('customer_id', cust.id).eq('status', 'active');
+      setHotelBlocks((hotelsData || []).map(h => ({ dbId: h.id, hotelId: h.hotel_id, checkIn: h.check_in || '', checkOut: h.check_out || '', totalNight: h.total_night || '', hotelName: h.hotel_name || '', roomName: h.room_name || '', totalRoom: h.total_room || 1, confirmationNumber: h.confirmation_number || '', bookingType: h.booking_type || '', note: h.note || '', breakfast: h.breakfast || '', saleAmount: h.sale_amount || '', netAmount: h.net_amount || '' })));
+    } catch (err) {
+      toast.error('โหลดข้อมูลไม่สำเร็จ: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleChange(e) { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); }
@@ -44,13 +56,25 @@ export default function EditCustomerPage({ params }) {
 
   async function removeTour(idx) {
     const t = tourBlocks[idx];
-    if (t.dbId) { const r = await Swal.fire({ title: 'ลบ Tour นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ' }); if (!r.isConfirmed) return; await supabase.from('tours').delete().eq('id', t.dbId); }
+    if (t.dbId) {
+      const r = await Swal.fire({ title: 'ลบ Tour นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ' });
+      if (!r.isConfirmed) return;
+      // soft-delete: keep the row for history, just flip status so it's filtered out everywhere
+      const { error } = await supabase.from('tours').update({ status: 'cancelled' }).eq('id', t.dbId);
+      if (error) { toast.error('ลบไม่สำเร็จ: ' + error.message); return; }
+    }
     setTourBlocks(prev => prev.filter((_, i) => i !== idx));
   }
 
   async function removeHotel(idx) {
     const h = hotelBlocks[idx];
-    if (h.dbId) { const r = await Swal.fire({ title: 'ลบ Hotel นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ' }); if (!r.isConfirmed) return; await supabase.from('hotels').delete().eq('id', h.dbId); }
+    if (h.dbId) {
+      const r = await Swal.fire({ title: 'ลบ Hotel นี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ' });
+      if (!r.isConfirmed) return;
+      // soft-delete: keep the row for history, just flip status so it's filtered out everywhere
+      const { error } = await supabase.from('hotels').update({ status: 'cancelled' }).eq('id', h.dbId);
+      if (error) { toast.error('ลบไม่สำเร็จ: ' + error.message); return; }
+    }
     setHotelBlocks(prev => prev.filter((_, i) => i !== idx));
   }
 
@@ -59,16 +83,17 @@ export default function EditCustomerPage({ params }) {
     if (!form.guestName.trim()) { toast.error('กรุณาใส่ชื่อลูกค้า'); return; }
     setSaving(true);
     try {
-      await supabase.from('customers').update({ guest_name: form.guestName.trim(), nationality: form.nationality, customer_type: form.customerType, customer_detail: form.customerDetail, sale_person: form.salePerson, updated_at: new Date().toISOString() }).eq('id', customerId);
+      const { error: custErr } = await supabase.from('customers').update({ guest_name: form.guestName.trim(), nationality: form.nationality, customer_type: form.customerType, customer_detail: form.customerDetail, sale_person: form.salePerson, updated_at: new Date().toISOString() }).eq('id', customerId);
+      if (custErr) throw custErr;
       for (const t of tourBlocks) {
         const row = { tour_date: t.tourDate || null, tour_detail: t.tourDetail, tour_name: t.tourName, company_name: t.companyName, adult: parseInt(t.adult) || 0, child: parseInt(t.child) || 0, pickup_time: t.pickupTime, hotel_name: t.hotelName, room_number: t.roomNumber, note: t.note, operator_contact: t.operatorContact, sale_amount: parseFloat(t.saleAmount) || 0, net_amount: parseFloat(t.netAmount) || 0 };
-        if (t.dbId) { await supabase.from('tours').update(row).eq('id', t.dbId); }
-        else { const { data: tid } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' }); await supabase.from('tours').insert({ ...row, tour_id: tid, customer_id: customerId }); }
+        if (t.dbId) { const { error } = await supabase.from('tours').update(row).eq('id', t.dbId); if (error) throw error; }
+        else { const { data: tid, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' }); if (idErr) throw idErr; const { error } = await supabase.from('tours').insert({ ...row, tour_id: tid, customer_id: customerId }); if (error) throw error; }
       }
       for (const h of hotelBlocks) {
         const row = { check_in: h.checkIn || null, check_out: h.checkOut || null, total_night: parseInt(h.totalNight) || 0, hotel_name: h.hotelName, room_name: h.roomName, total_room: parseInt(h.totalRoom) || 1, confirmation_number: h.confirmationNumber, booking_type: h.bookingType, note: h.note, breakfast: h.breakfast, sale_amount: parseFloat(h.saleAmount) || 0, net_amount: parseFloat(h.netAmount) || 0 };
-        if (h.dbId) { await supabase.from('hotels').update(row).eq('id', h.dbId); }
-        else { const { data: hid } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' }); await supabase.from('hotels').insert({ ...row, hotel_id: hid, customer_id: customerId }); }
+        if (h.dbId) { const { error } = await supabase.from('hotels').update(row).eq('id', h.dbId); if (error) throw error; }
+        else { const { data: hid, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' }); if (idErr) throw idErr; const { error } = await supabase.from('hotels').insert({ ...row, hotel_id: hid, customer_id: customerId }); if (error) throw error; }
       }
       await Swal.fire({ title: 'บันทึกสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false });
       router.push('/');
@@ -78,9 +103,9 @@ export default function EditCustomerPage({ params }) {
   async function handleDeleteCustomer() {
     const r = await Swal.fire({ title: 'ลบลูกค้านี้?', text: 'Tour และ Hotel ทั้งหมดจะถูกลบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ' });
     if (!r.isConfirmed) return;
-    await supabase.from('tours').delete().eq('customer_id', customerId);
-    await supabase.from('hotels').delete().eq('customer_id', customerId);
-    await supabase.from('customers').delete().eq('id', customerId);
+    // tours/hotels are removed automatically via the customer_id FK (ON DELETE CASCADE)
+    const { error } = await supabase.from('customers').delete().eq('id', customerId);
+    if (error) { toast.error('ลบไม่สำเร็จ: ' + error.message); return; }
     await Swal.fire({ title: 'ลบเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
     router.push('/');
   }

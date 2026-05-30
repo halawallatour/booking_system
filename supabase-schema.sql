@@ -80,15 +80,10 @@ begin
 end;
 $$;
 
-create or replace function exec_sql(query text)
-returns json language plpgsql security definer as $$
-begin
-  execute query;
-  return json_build_object('status', 'ok');
-exception when others then
-  return json_build_object('status', 'error', 'message', SQLERRM);
-end;
-$$;
+-- NOTE: an `exec_sql(text)` function used to live here. It ran ARBITRARY SQL as the
+-- table owner (security definer) and was callable by the public `anon` role, which means
+-- anyone holding the public anon key could run `drop table customers` etc. It has been
+-- removed. Run ad-hoc DDL/SQL from the Supabase Dashboard SQL Editor instead.
 
 insert into dropdowns (category, value, sort_order) values
 ('nationality', 'Thai', 1),

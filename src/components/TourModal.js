@@ -8,7 +8,7 @@ export default function TourModal({ dropdowns, initial, onSave, onClose }) {
     if (initial) {
       let fromTime = '', toTime = '';
       if (initial.pickupTime && initial.pickupTime.includes(' - ')) { [fromTime, toTime] = initial.pickupTime.split(' - '); }
-      else if (initial.pickupTime) { fromTime = initial.pickupTime; toTime = initial.pickupTime; }
+      else if (initial.pickupTime) { fromTime = initial.pickupTime; toTime = ''; }
       setForm({ tourDate: initial.tourDate || '', tourDetail: initial.tourDetail || '', tourName: initial.tourName || '', companyName: initial.companyName || '', adult: initial.adult || '', child: initial.child || '', pickupTimeFrom: fromTime, pickupTimeTo: toTime, hotelName: initial.hotelName || '', roomNumber: initial.roomNumber || '', note: initial.note || '', operatorContact: initial.operatorContact || '', saleAmount: initial.saleAmount || '', netAmount: initial.netAmount || '' });
     }
   }, [initial]);
@@ -17,9 +17,11 @@ export default function TourModal({ dropdowns, initial, onSave, onClose }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    const f = form.pickupTimeFrom || form.pickupTimeTo;
-    const t = form.pickupTimeTo || form.pickupTimeFrom;
-    const pickupTime = f ? `${f} - ${t}` : '';
+    // single time stays single; only render a range when both ends differ
+    const from = form.pickupTimeFrom, to = form.pickupTimeTo;
+    let pickupTime = '';
+    if (from && to) pickupTime = from === to ? from : `${from} - ${to}`;
+    else pickupTime = from || to || '';
     onSave({ tourDate: form.tourDate, tourDetail: form.tourDetail, tourName: form.tourName, companyName: form.companyName, adult: form.adult, child: form.child, pickupTime, hotelName: form.hotelName, roomNumber: form.roomNumber, note: form.note, operatorContact: form.operatorContact, saleAmount: form.saleAmount, netAmount: form.netAmount });
   }
 

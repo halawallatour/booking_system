@@ -29,15 +29,32 @@ export default function NewCustomerPage() {
     e.preventDefault();
     if (!form.guestName.trim()) { toast.error('กรุณาใส่ชื่อลูกค้า'); return; }
     setSaving(true);
+    let createdCustomerId = null;
     try {
-      const { data: itemIdData } = await supabase.rpc('next_id', { p_prefix: 'VC', p_counter: 'customer' });
+      const { data: itemIdData, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'VC', p_counter: 'customer' });
+      if (idErr) throw idErr;
       const { data: customer, error: custErr } = await supabase.from('customers').insert({ item_id: itemIdData, guest_name: form.guestName.trim(), nationality: form.nationality, customer_type: form.customerType, customer_detail: form.customerDetail, sale_person: form.salePerson }).select('id').single();
       if (custErr) throw custErr;
-      for (const t of tourBlocks) { const { data: tid } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' }); await supabase.from('tours').insert({ tour_id: tid, customer_id: customer.id, tour_date: t.tourDate || null, tour_detail: t.tourDetail, tour_name: t.tourName, company_name: t.companyName, adult: parseInt(t.adult) || 0, child: parseInt(t.child) || 0, pickup_time: t.pickupTime, hotel_name: t.hotelName, room_number: t.roomNumber, note: t.note, operator_contact: t.operatorContact, sale_amount: parseFloat(t.saleAmount) || 0, net_amount: parseFloat(t.netAmount) || 0 }); }
-      for (const h of hotelBlocks) { const { data: hid } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' }); await supabase.from('hotels').insert({ hotel_id: hid, customer_id: customer.id, check_in: h.checkIn || null, check_out: h.checkOut || null, total_night: parseInt(h.totalNight) || 0, hotel_name: h.hotelName, room_name: h.roomName, total_room: parseInt(h.totalRoom) || 1, confirmation_number: h.confirmationNumber, booking_type: h.bookingType, note: h.note, breakfast: h.breakfast, sale_amount: parseFloat(h.saleAmount) || 0, net_amount: parseFloat(h.netAmount) || 0 }); }
+      createdCustomerId = customer.id;
+      for (const t of tourBlocks) {
+        const { data: tid, error: tidErr } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' });
+        if (tidErr) throw tidErr;
+        const { error } = await supabase.from('tours').insert({ tour_id: tid, customer_id: customer.id, tour_date: t.tourDate || null, tour_detail: t.tourDetail, tour_name: t.tourName, company_name: t.companyName, adult: parseInt(t.adult) || 0, child: parseInt(t.child) || 0, pickup_time: t.pickupTime, hotel_name: t.hotelName, room_number: t.roomNumber, note: t.note, operator_contact: t.operatorContact, sale_amount: parseFloat(t.saleAmount) || 0, net_amount: parseFloat(t.netAmount) || 0 });
+        if (error) throw error;
+      }
+      for (const h of hotelBlocks) {
+        const { data: hid, error: hidErr } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' });
+        if (hidErr) throw hidErr;
+        const { error } = await supabase.from('hotels').insert({ hotel_id: hid, customer_id: customer.id, check_in: h.checkIn || null, check_out: h.checkOut || null, total_night: parseInt(h.totalNight) || 0, hotel_name: h.hotelName, room_name: h.roomName, total_room: parseInt(h.totalRoom) || 1, confirmation_number: h.confirmationNumber, booking_type: h.bookingType, note: h.note, breakfast: h.breakfast, sale_amount: parseFloat(h.saleAmount) || 0, net_amount: parseFloat(h.netAmount) || 0 });
+        if (error) throw error;
+      }
       await Swal.fire({ title: 'บันทึกสำเร็จ!', text: `สร้างลูกค้า ${itemIdData} เรียบร้อย`, icon: 'success', timer: 1500, showConfirmButton: false });
       router.push('/');
-    } catch (err) { toast.error('Error: ' + err.message); } finally { setSaving(false); }
+    } catch (err) {
+      // roll back the half-created customer (cascade removes any tours/hotels already inserted) so we don't leave orphans
+      if (createdCustomerId) { await supabase.from('customers').delete().eq('id', createdCustomerId); }
+      toast.error('Error: ' + err.message);
+    } finally { setSaving(false); }
   }
 
   return (

@@ -11,50 +11,6 @@ export default function SqlEditorPage() {
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState([]);
 
-  async function runSql() {
-    if (!sql.trim()) return;
-    setRunning(true);
-    setResult(null);
-
-    const statements = sql
-      .split(/;\s*\n/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
-
-    const newLog = [];
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < statements.length; i++) {
-      const stmt = statements[i].replace(/;$/, '').trim();
-      if (!stmt) continue;
-
-      try {
-        const { data, error } = await supabase.rpc('exec_sql', { query: stmt });
-        if (error) {
-          newLog.push({ idx: i + 1, status: 'error', sql: stmt.slice(0, 80) + '...', message: error.message });
-          errorCount++;
-        } else {
-          newLog.push({ idx: i + 1, status: 'ok', sql: stmt.slice(0, 80) + '...', message: `OK${data ? ` (${JSON.stringify(data).slice(0, 100)})` : ''}` });
-          successCount++;
-        }
-      } catch (err) {
-        newLog.push({ idx: i + 1, status: 'error', sql: stmt.slice(0, 80) + '...', message: err.message });
-        errorCount++;
-      }
-    }
-
-    setLog(newLog);
-    setResult({ total: statements.length, success: successCount, errors: errorCount });
-    setRunning(false);
-
-    if (errorCount === 0) {
-      toast.success(`รัน ${successCount} คำสั่งสำเร็จ`);
-    } else {
-      toast.error(`สำเร็จ ${successCount} / ผิดพลาด ${errorCount}`);
-    }
-  }
-
   async function runDirectInsert() {
     if (!sql.trim()) return;
     setRunning(true);
@@ -198,9 +154,6 @@ export default function SqlEditorPage() {
           <button onClick={runDirectInsert} disabled={running || !sql.trim()} className="btn btn-primary">
             {running ? '⏳ กำลังรัน...' : '▶️ Run (Direct Insert)'}
           </button>
-          <button onClick={runSql} disabled={running || !sql.trim()} className="btn btn-ghost">
-            ▶️ Run (via exec_sql RPC)
-          </button>
           <button onClick={() => { setSql(''); setLog([]); setResult(null); }} className="btn btn-ghost">
             🗑️ Clear
           </button>
@@ -231,9 +184,8 @@ export default function SqlEditorPage() {
         <h3 className="font-semibold mb-3">📖 วิธีใช้</h3>
         <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
           <p>1. กดปุ่ม <strong>"โหลด SQL ลูกค้า"</strong> เพื่อโหลด SQL สำหรับ import ลูกค้า 76 รายการ</p>
-          <p>2. กด <strong>"Run (Direct Insert)"</strong> เพื่อรันโดยตรงผ่าน Supabase JS</p>
-          <p>3. ถ้าต้องการรัน SQL อื่น (CREATE TABLE, ALTER) ให้ใช้ <strong>Supabase Dashboard → SQL Editor</strong> แทน</p>
-          <p>4. ปุ่ม <strong>"Run (via exec_sql RPC)"</strong> ใช้ได้เมื่อสร้าง function exec_sql ใน Supabase แล้ว</p>
+          <p>2. กด <strong>"Run (Direct Insert)"</strong> เพื่อรันโดยตรงผ่าน Supabase JS (รองรับเฉพาะ INSERT INTO customers และ UPDATE id_counters เท่านั้น)</p>
+          <p>3. ถ้าต้องการรัน SQL อื่น (CREATE TABLE, ALTER, ฯลฯ) ให้ใช้ <strong>Supabase Dashboard → SQL Editor</strong> แทน</p>
         </div>
       </div>
     </div>
