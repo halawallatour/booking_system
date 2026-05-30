@@ -11,6 +11,13 @@ export default function DashboardPage() {
 
   useEffect(() => { loadDashboard(); }, []);
 
+  // let the global header Refresh button reload this page too
+  useEffect(() => {
+    const onRefresh = () => loadDashboard();
+    window.addEventListener('app:refresh', onRefresh);
+    return () => window.removeEventListener('app:refresh', onRefresh);
+  }, []);
+
   async function loadDashboard() {
     try {
       const [{ count: customers }, { count: tours }, { count: hotels }] = await Promise.all([
@@ -26,6 +33,7 @@ export default function DashboardPage() {
       setStats({ customers: customers || 0, tours: tours || 0, hotels: hotels || 0, revenue, profit });
       const { data: recent } = await supabase.from('tours').select('*, customers(item_id, guest_name)').eq('status', 'active').order('tour_date', { ascending: false }).limit(10);
       setRecentTours(recent || []);
+      window.dispatchEvent(new CustomEvent('app:updated'));
     } catch (err) {
       toast.error('โหลด Dashboard ไม่สำเร็จ: ' + err.message);
     } finally {

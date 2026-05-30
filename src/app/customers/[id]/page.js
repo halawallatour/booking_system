@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import TourModal from '@/components/TourModal';
 import HotelModal from '@/components/HotelModal';
+import { backupCustomerById } from '@/lib/backup';
 
 export default function EditCustomerPage({ params }) {
   const { id: itemId } = use(params);
@@ -95,6 +96,7 @@ export default function EditCustomerPage({ params }) {
         if (h.dbId) { const { error } = await supabase.from('hotels').update(row).eq('id', h.dbId); if (error) throw error; }
         else { const { data: hid, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' }); if (idErr) throw idErr; const { error } = await supabase.from('hotels').insert({ ...row, hotel_id: hid, customer_id: customerId }); if (error) throw error; }
       }
+      backupCustomerById(itemId); // สำรองขึ้น Google Sheet (fire-and-forget)
       await Swal.fire({ title: 'บันทึกสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false });
       router.push('/');
     } catch (err) { toast.error('Error: ' + err.message); } finally { setSaving(false); }

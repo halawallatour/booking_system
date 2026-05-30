@@ -15,13 +15,11 @@ export default function VoucherManagementPage() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const { count: custCount } = await supabase.from('customers').select('*', { count: 'exact', head: true });
-      setConnected(true);
       const today = new Date().toISOString().slice(0, 10);
       const monthStart = today.slice(0, 7) + '-01';
       const { data: allTours } = await supabase.from('tours').select('tour_date, sale_amount, net_amount').eq('status', 'active');
@@ -38,11 +36,20 @@ export default function VoucherManagementPage() {
       const { data, count } = await query;
       setCustomers(data || []);
       setTotalCount(count || 0);
-    } catch (err) { setConnected(false); }
+      // tell the header's Refresh control we just refreshed (stamps "last updated")
+      window.dispatchEvent(new CustomEvent('app:updated'));
+    } catch (err) { /* swallow: a failed fetch just leaves the previous data on screen */ }
     setLoading(false);
   }, [page, appliedSearch]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // let the global header Refresh button trigger a reload of this page
+  useEffect(() => {
+    const onRefresh = () => loadData();
+    window.addEventListener('app:refresh', onRefresh);
+    return () => window.removeEventListener('app:refresh', onRefresh);
+  }, [loadData]);
 
   // commit the search box into appliedSearch and reset to page 0; the effect above re-fetches once
   function handleSearch(e) { e.preventDefault(); setPage(0); setAppliedSearch(search.trim()); }
@@ -57,6 +64,11 @@ export default function VoucherManagementPage() {
     loadData();
   }
 
+  // TODO: เชื่อมกับเทมเพลต Google Slide เพื่อสร้าง PDF voucher (รอ template จากผู้ใช้)
+  function handlePrint(cust) {
+    toast('ฟีเจอร์ปริ้น PDF กำลังพัฒนา — จะเชื่อมกับ Google Slide', { icon: '🖨️' });
+  }
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   function formatMoney(n) { return '฿' + Math.round(n).toLocaleString(); }
 
@@ -66,10 +78,9 @@ export default function VoucherManagementPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold">Tour Voucher Management</h2>
-            {connected && <p className="text-sm text-[var(--color-success)] mt-1 flex items-center gap-1"><span>✓</span> เชื่อมต่อฐานข้อมูล Supabase แล้ว</p>}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Link href="/database" className="btn btn-outline-primary">📋 ฐานข้อมูล</Link>
+            <Link href="/database" className="btn btn-outline-primary">📋 ตั้งค่า Dropdown</Link>
             <Link href="/sql-editor" className="btn btn-outline-primary">🛠️ SQL</Link>
             <Link href="/customers/new" className="btn btn-primary">＋ สร้างการจองใหม่</Link>
           </div>
@@ -79,13 +90,12 @@ export default function VoucherManagementPage() {
           <div className="stat-card"><div className="stat-icon bg-[var(--color-brand-bg)] text-[var(--color-brand)]">💰</div><div><div className="stat-label">ยอดขายวันนี้</div><div className="stat-value">{formatMoney(stats.salesToday)}</div></div></div>
           <div className="stat-card"><div className="stat-icon bg-[var(--color-info-light)] text-[var(--color-info)]">📊</div><div><div className="stat-label">ยอดขายเดือนนี้</div><div className="stat-value">{formatMoney(stats.salesMonth)}</div></div></div>
           <div className="stat-card"><div className="stat-icon bg-[var(--color-success-light)] text-[var(--color-success)]">💵</div><div><div className="stat-label">กำไรสุทธิรวม</div><div className="stat-value">{formatMoney(stats.profitTotal)}</div></div></div>
-          <div className="stat-card"><div className="stat-icon bg-[var(--color-success-light)] text-[var(--color-success)]">✓</div><div><div className="stat-label">จำนวนลูกค้ารวม</div><div className="stat-value">{stats.totalCustomers} <span className="text-sm font-normal text-[var(--color-text-muted)]">รายการ</span></div></div></div>
+          <div className="stat-card"><div className="stat-icon bg-[var(--color-success-light)] text-[var(--color-success)]">✓</div><div><div className="stat-label">จำนวนบุ๊กกิ้งรวม</div><div className="stat-value">{stats.totalCustomers} <span className="text-sm font-normal text-[var(--color-text-muted)]">รายการ</span></div></div></div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <h3 className="font-semibold text-base flex items-center gap-2"><span>✓</span> รายการจองล่าสุด</h3>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button onClick={loadData} className="btn btn-outline-primary text-sm px-3 py-2">🔄 Refresh</button>
             <form onSubmit={handleSearch} className="flex gap-2 flex-1 sm:flex-initial">
               <div className="relative flex-1 sm:w-64">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">🔍</span>
@@ -114,9 +124,10 @@ export default function VoucherManagementPage() {
                       {activeTours.length === 0 && activeHotels.length === 0 && <span className="text-sm text-[var(--color-text-muted)]">— ยังไม่มีรายการ</span>}
                     </div></td>
                     <td><div className="flex gap-1 justify-end">
-                      <Link href={`/customers/${cust.item_id}?add=true`} className="action-btn" title="เพิ่มรายการ">＋</Link>
-                      <Link href={`/customers/${cust.item_id}`} className="action-btn" title="แก้ไข">✏️</Link>
-                      <button onClick={() => handleDelete(cust)} className="action-btn text-[var(--color-danger)]" title="ลบ">🗑️</button>
+                      <Link href={`/customers/${cust.item_id}?add=true`} className="action-btn" title="เพิ่มรายการลูกค้าคนเดิม">＋</Link>
+                      <Link href={`/customers/${cust.item_id}`} className="action-btn" title="แก้ไขรายการ">✏️</Link>
+                      <button onClick={() => handlePrint(cust)} className="action-btn" title="ปริ้น PDF">🖨️</button>
+                      <button onClick={() => handleDelete(cust)} className="action-btn text-[var(--color-danger)]" title="ลบรายการ">🗑️</button>
                     </div></td>
                   </tr>);
               })}

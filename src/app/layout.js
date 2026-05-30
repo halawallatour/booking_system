@@ -1,8 +1,9 @@
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import HeaderRefresh from '@/components/HeaderRefresh';
 
-export const metadata = { title: 'Tour Booking System', description: 'Tour & Hotel Booking Management' };
+export const metadata = { title: 'Hala Walla Tour Booking System', description: 'Tour & Hotel Booking Management' };
 
 export default function RootLayout({ children }) {
   return (
@@ -16,11 +17,12 @@ export default function RootLayout({ children }) {
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' } }} />
         <header className="sticky top-0 z-50 bg-white border-b border-[var(--color-border)]">
           <div className="max-w-[1320px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-8">
-            <Link href="/" className="font-bold text-lg tracking-tight text-[var(--color-brand-dark)] shrink-0">TOUR BOOKING</Link>
+            <Link href="/" className="font-bold text-lg tracking-tight text-[var(--color-brand-dark)] shrink-0">HALA WALLA</Link>
             <nav className="flex items-center gap-1">
               <Link href="/" className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors rounded-lg hover:bg-[var(--color-surface-hover)]"><span>📋</span><span className="hidden sm:inline">Voucher Management</span></Link>
               <Link href="/dashboard" className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors rounded-lg hover:bg-[var(--color-surface-hover)]"><span>📊</span><span className="hidden sm:inline">Executive Dashboard</span></Link>
             </nav>
+            <HeaderRefresh />
           </div>
         </header>
         <main className="max-w-[1320px] mx-auto px-4 sm:px-6 py-6">{children}</main>
