@@ -27,303 +27,49 @@
 }
 
 @layer base {
-  body {
-    font-family: var(--font-sans);
-    background-color: #f0f4f8;
-    color: var(--color-text-primary);
-    -webkit-font-smoothing: antialiased;
-  }
+  body { font-family: var(--font-sans); background-color: #f0f4f8; color: var(--color-text-primary); -webkit-font-smoothing: antialiased; }
 }
 
 @layer components {
-  .card {
-    background: var(--color-surface);
-    border-radius: 16px;
-    border: 1px solid var(--color-border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: none;
-    outline: none;
-  }
-
-  .btn:active {
-    transform: scale(0.97);
-  }
-
-  .btn-primary {
-    background: var(--color-brand);
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background: var(--color-brand-dark);
-  }
-
-  .btn-success {
-    background: var(--color-success);
-    color: white;
-  }
-
-  .btn-success:hover {
-    background: #059669;
-  }
-
-  .btn-danger {
-    background: var(--color-danger);
-    color: white;
-  }
-
-  .btn-danger:hover {
-    background: #dc2626;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-  }
-
-  .btn-ghost:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text-primary);
-  }
-
-  .btn-outline-primary {
-    background: transparent;
-    color: var(--color-brand);
-    border: 1px solid var(--color-border);
-  }
-
-  .btn-outline-primary:hover {
-    background: var(--color-brand-bg);
-    border-color: var(--color-brand-light);
-  }
-
-  .input {
-    width: 100%;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    font-size: 14px;
-    color: var(--color-text-primary);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    outline: none;
-  }
-
-  .input:focus {
-    border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  .input::placeholder {
-    color: var(--color-text-muted);
-  }
-
-  .label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    margin-bottom: 6px;
-    letter-spacing: 0.01em;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .badge-tour {
-    background: var(--color-info-light);
-    color: var(--color-info);
-  }
-
-  .badge-hotel {
-    background: var(--color-purple-light);
-    color: var(--color-purple);
-  }
-
-  .badge-cancelled {
-    background: var(--color-danger-light);
-    color: var(--color-danger);
-  }
-
-  .table-container {
-    overflow-x: auto;
-  }
-
-  .table-container table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
-
-  .table-container th {
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-    border-bottom: 1px solid var(--color-border);
-    white-space: nowrap;
-  }
-
-  .table-container td {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--color-border-light);
-    color: var(--color-text-primary);
-    vertical-align: top;
-  }
-
-  .table-container tr:last-child td {
-    border-bottom: none;
-  }
-
-  .table-container tr:hover td {
-    background: var(--color-surface-alt);
-  }
-
-  .stat-card {
-    background: var(--color-surface);
-    border-radius: 14px;
-    padding: 20px 24px;
-    border: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .stat-card .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-  }
-
-  .stat-card .stat-label {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-  }
-
-  .stat-card .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    letter-spacing: -0.02em;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    animation: fadeIn 0.15s ease;
-  }
-
-  .modal-content {
-    background: var(--color-surface);
-    border-radius: 20px;
-    padding: 28px;
-    width: 90%;
-    max-width: 680px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-    animation: slideUp 0.2s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .pagination {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .pagination button {
-    min-width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pagination button:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text-primary);
-  }
-
-  .pagination button.active {
-    background: var(--color-brand);
-    color: white;
-    border-color: var(--color-brand);
-  }
-
-  .pagination button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .action-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-size: 15px;
-  }
-
-  .action-btn:hover {
-    background: var(--color-surface-hover);
-    border-color: var(--color-text-muted);
-  }
+  .card { background: var(--color-surface); border-radius: 16px; border: 1px solid var(--color-border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--color-brand); color: white; }
+  .btn-primary:hover { background: var(--color-brand-dark); }
+  .btn-success { background: var(--color-success); color: white; }
+  .btn-success:hover { background: #059669; }
+  .btn-danger { background: var(--color-danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-ghost { background: transparent; color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+  .btn-ghost:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+  .btn-outline-primary { background: transparent; color: var(--color-brand); border: 1px solid var(--color-border); }
+  .btn-outline-primary:hover { background: var(--color-brand-bg); border-color: var(--color-brand-light); }
+  .input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--color-border); background: var(--color-surface); font-size: 14px; color: var(--color-text-primary); transition: border-color 0.15s ease, box-shadow 0.15s ease; outline: none; }
+  .input:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+  .input::placeholder { color: var(--color-text-muted); }
+  .label { display: block; font-size: 13px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .badge-tour { background: var(--color-info-light); color: var(--color-info); }
+  .badge-hotel { background: var(--color-purple-light); color: var(--color-purple); }
+  .table-container { overflow-x: auto; }
+  .table-container table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table-container th { padding: 12px 16px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+  .table-container td { padding: 14px 16px; border-bottom: 1px solid var(--color-border-light); color: var(--color-text-primary); vertical-align: top; }
+  .table-container tr:last-child td { border-bottom: none; }
+  .table-container tr:hover td { background: var(--color-surface-alt); }
+  .stat-card { background: var(--color-surface); border-radius: 14px; padding: 20px 24px; border: 1px solid var(--color-border); display: flex; align-items: center; gap: 16px; }
+  .stat-card .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .stat-card .stat-label { font-size: 13px; color: var(--color-text-secondary); }
+  .stat-card .stat-value { font-size: 24px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.02em; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; animation: fadeIn 0.15s ease; }
+  .modal-content { background: var(--color-surface); border-radius: 20px; padding: 28px; width: 90%; max-width: 680px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: slideUp 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .pagination button { min-width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center; }
+  .pagination button:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+  .pagination button.active { background: var(--color-brand); color: white; border-color: var(--color-brand); }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .action-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease; font-size: 15px; }
+  .action-btn:hover { background: var(--color-surface-hover); border-color: var(--color-text-muted); }
 }

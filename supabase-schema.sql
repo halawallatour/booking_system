@@ -80,6 +80,16 @@ begin
 end;
 $$;
 
+create or replace function exec_sql(query text)
+returns json language plpgsql security definer as $$
+begin
+  execute query;
+  return json_build_object('status', 'ok');
+exception when others then
+  return json_build_object('status', 'error', 'message', SQLERRM);
+end;
+$$;
+
 insert into dropdowns (category, value, sort_order) values
 ('nationality', 'Thai', 1),
 ('nationality', 'Chinese', 2),
