@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { DateRangeField } from './DateField';
+import Combobox from './Combobox';
 
 export default function HotelModal({ dropdowns, initial, onSave, onClose }) {
   const [form, setForm] = useState({ checkIn: '', checkOut: '', totalNight: '', hotelName: '', roomName: '', totalRoom: 1, confirmationNumber: '', bookingType: '', note: '', breakfast: '', saleAmount: '', netAmount: '' });
@@ -12,11 +14,17 @@ export default function HotelModal({ dropdowns, initial, onSave, onClose }) {
 
   function handleChange(e) {
     const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  }
+
+  function handleStayChange(checkIn, checkOut) {
     setForm(prev => {
-      const next = { ...prev, [name]: value };
-      if ((name === 'checkIn' || name === 'checkOut') && next.checkIn && next.checkOut) {
-        const diff = Math.round((new Date(next.checkOut) - new Date(next.checkIn)) / 86400000);
+      const next = { ...prev, checkIn, checkOut };
+      if (checkIn && checkOut) {
+        const diff = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
         next.totalNight = diff > 0 ? diff : 0;
+      } else {
+        next.totalNight = '';
       }
       return next;
     });
@@ -33,11 +41,10 @@ export default function HotelModal({ dropdowns, initial, onSave, onClose }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="label">Check In</label><input type="date" className="input" name="checkIn" value={form.checkIn} onChange={handleChange} /></div>
-            <div><label className="label">Check Out</label><input type="date" className="input" name="checkOut" value={form.checkOut} onChange={handleChange} /></div>
+            <div className="md:col-span-2"><label className="label">Check In — Check Out</label><DateRangeField start={form.checkIn} end={form.checkOut} onChange={handleStayChange} placeholder="เลือกวันเช็คอิน–เช็คเอาท์" /></div>
             <div><label className="label">Total Night (Auto)</label><input type="number" className="input bg-[var(--color-surface-alt)]" name="totalNight" value={form.totalNight} readOnly /></div>
-            <div><label className="label">Hotel Name</label><select className="input" name="hotelName" value={form.hotelName} onChange={handleChange}><option value="">--- Choose ---</option>{(dropdowns.hotel_name || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
-            <div><label className="label">Room Name</label><select className="input" name="roomName" value={form.roomName} onChange={handleChange}><option value="">--- Choose ---</option>{(dropdowns.room_name || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+            <div><label className="label">Hotel Name</label><Combobox options={dropdowns.hotel_name || []} value={form.hotelName} onChange={v => setForm(prev => ({ ...prev, hotelName: v }))} /></div>
+            <div><label className="label">Room Name</label><Combobox options={dropdowns.room_name || []} value={form.roomName} onChange={v => setForm(prev => ({ ...prev, roomName: v }))} /></div>
             <div><label className="label">Total Room</label><input type="number" className="input" name="totalRoom" min="1" value={form.totalRoom} onChange={handleChange} /></div>
             <div><label className="label">Confirmation Number</label><input className="input" name="confirmationNumber" value={form.confirmationNumber} onChange={handleChange} /></div>
             <div><label className="label">Booking Type</label><select className="input" name="bookingType" value={form.bookingType} onChange={handleChange}><option value="">--- Choose ---</option>{(dropdowns.booking_type || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>

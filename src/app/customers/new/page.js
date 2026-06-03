@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import TourModal from '@/components/TourModal';
 import HotelModal from '@/components/HotelModal';
+import SelectWithOther from '@/components/SelectWithOther';
 import { backupCustomerById } from '@/lib/backup';
 
 export default function NewCustomerPage() {
@@ -67,14 +68,14 @@ export default function NewCustomerPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div><label className="label">ชื่อลูกค้า</label><input className="input" name="guestName" value={form.guestName} onChange={handleChange} /></div>
           <div><label className="label">สัญชาติ</label><select className="input" name="nationality" value={form.nationality} onChange={handleChange}><option value="">--- เลือก ---</option>{(dropdowns.nationality || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
-          <div><label className="label">ประเภทลูกค้า</label><select className="input" name="customerType" value={form.customerType} onChange={handleChange}><option value="">--- เลือก ---</option>{(dropdowns.customer_type || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+          <div><label className="label">ประเภทลูกค้า</label><SelectWithOther options={dropdowns.customer_type || []} value={form.customerType} onChange={v => setForm(prev => ({ ...prev, customerType: v }))} /></div>
           <div><label className="label">รายละเอียด</label><input className="input" name="customerDetail" value={form.customerDetail} onChange={handleChange} /></div>
-          <div><label className="label">พนักงานขาย</label><select className="input" name="salePerson" value={form.salePerson} onChange={handleChange}><option value="">--- เลือก ---</option>{(dropdowns.sale_person || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+          <div><label className="label">พนักงานขาย</label><SelectWithOther options={dropdowns.sale_person || []} value={form.salePerson} onChange={v => setForm(prev => ({ ...prev, salePerson: v }))} /></div>
         </div>
         <hr className="border-[var(--color-border)]" />
-        <div className="flex gap-2">
-          <button type="button" className="btn btn-outline-primary" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>➕ เพิ่ม Tour</button>
-          <button type="button" className="btn btn-outline-primary" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>🏨 เพิ่ม Hotel</button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button type="button" className="btn btn-outline-primary w-full sm:w-auto justify-center" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>🚌 เพิ่ม Tour</button>
+          <button type="button" className="btn btn-outline-primary w-full sm:w-auto justify-center" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>🏨 เพิ่ม Hotel</button>
         </div>
         {tourBlocks.length > 0 && <div className="space-y-3"><h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🗺️ Tour Bookings</h4>{tourBlocks.map((t, i) => (<div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]"><div><p className="font-medium">{t.tourName || 'Tour'} — {t.tourDate || 'No date'}</p><p className="text-sm text-[var(--color-text-secondary)]">{t.companyName} · {t.adult || 0}A {t.child || 0}C</p></div><div className="flex gap-1"><button type="button" className="action-btn" onClick={() => { setEditingTourIdx(i); setShowTourModal(true); }}>✏️</button><button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => setTourBlocks(prev => prev.filter((_, j) => j !== i))}>✕</button></div></div>))}</div>}
         {hotelBlocks.length > 0 && <div className="space-y-3"><h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🏨 Hotel Bookings</h4>{hotelBlocks.map((h, i) => (<div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]"><div><p className="font-medium">{h.hotelName || 'Hotel'} — {h.roomName || ''}</p><p className="text-sm text-[var(--color-text-secondary)]">{h.checkIn || '?'} → {h.checkOut || '?'} · {h.totalNight || 0}N</p></div><div className="flex gap-1"><button type="button" className="action-btn" onClick={() => { setEditingHotelIdx(i); setShowHotelModal(true); }}>✏️</button><button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => setHotelBlocks(prev => prev.filter((_, j) => j !== i))}>✕</button></div></div>))}</div>}

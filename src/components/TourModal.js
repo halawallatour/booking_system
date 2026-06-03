@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { DateField, TimeField } from './DateField';
+import Combobox from './Combobox';
 
 export default function TourModal({ dropdowns, initial, onSave, onClose }) {
   const [form, setForm] = useState({ tourDate: '', tourDetail: '', tourName: '', companyName: '', adult: '', child: '', pickupTimeFrom: '', pickupTimeTo: '', hotelName: '', roomNumber: '', note: '', operatorContact: '', saleAmount: '', netAmount: '' });
@@ -34,14 +36,14 @@ export default function TourModal({ dropdowns, initial, onSave, onClose }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="label">Tour Date</label><input type="date" className="input" name="tourDate" value={form.tourDate} onChange={handleChange} /></div>
+            <div><label className="label">Tour Date</label><DateField value={form.tourDate} onChange={v => setForm(prev => ({ ...prev, tourDate: v }))} placeholder="เลือกวันที่ทัวร์" /></div>
             <div><label className="label">Tour Detail</label><input className="input" name="tourDetail" value={form.tourDetail} onChange={handleChange} /></div>
-            <div><label className="label">Tour Name</label><select className="input" name="tourName" value={form.tourName} onChange={handleChange}><option value="">--- Choose ---</option>{(dropdowns.tour_name || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
-            <div><label className="label">Company Name</label><select className="input" name="companyName" value={form.companyName} onChange={handleChange}><option value="">--- Choose ---</option>{(dropdowns.company_name || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+            <div><label className="label">Tour Name</label><Combobox options={dropdowns.tour_name || []} value={form.tourName} onChange={v => setForm(prev => ({ ...prev, tourName: v }))} /></div>
+            <div><label className="label">Company Name</label><Combobox options={dropdowns.company_name || []} value={form.companyName} onChange={v => setForm(prev => ({ ...prev, companyName: v }))} /></div>
             <div><label className="label">Adult</label><input type="number" className="input" name="adult" min="0" value={form.adult} onChange={handleChange} /></div>
             <div><label className="label">Child</label><input type="number" className="input" name="child" min="0" value={form.child} onChange={handleChange} /></div>
-            <div><label className="label">Pickup Time From</label><input type="time" className="input" name="pickupTimeFrom" value={form.pickupTimeFrom} onChange={handleChange} /></div>
-            <div><label className="label">Pickup Time To</label><input type="time" className="input" name="pickupTimeTo" value={form.pickupTimeTo} onChange={handleChange} /></div>
+            <div><label className="label">Pickup Time From</label><TimeField value={form.pickupTimeFrom} onChange={v => setForm(prev => ({ ...prev, pickupTimeFrom: v }))} /></div>
+            <div><label className="label">Pickup Time To</label><TimeField value={form.pickupTimeTo} onChange={v => setForm(prev => ({ ...prev, pickupTimeTo: v }))} /></div>
             <div><label className="label">Hotel Name</label><input className="input" name="hotelName" value={form.hotelName} onChange={handleChange} list="hotelListTour" /><datalist id="hotelListTour">{(dropdowns.hotel_name || []).map(v => <option key={v} value={v} />)}</datalist></div>
             <div><label className="label">Room Number</label><input className="input" name="roomNumber" value={form.roomNumber} onChange={handleChange} /></div>
           </div>
