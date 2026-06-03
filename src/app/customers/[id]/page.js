@@ -125,7 +125,7 @@ export default function EditCustomerPage({ params }) {
         <h3 className="font-semibold text-base text-[var(--color-text-secondary)]">ข้อมูลลูกค้า</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div><label className="label">ชื่อลูกค้า</label><input className="input" name="guestName" value={form.guestName} onChange={handleChange} /></div>
-          <div><label className="label">สัญชาติ</label><select className="input" name="nationality" value={form.nationality} onChange={handleChange}><option value="">--- เลือก ---</option>{(dropdowns.nationality || []).map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+          <div><label className="label">สัญชาติ</label><SelectWithOther options={dropdowns.nationality || []} value={form.nationality} onChange={v => setForm(prev => ({ ...prev, nationality: v }))} /></div>
           <div><label className="label">ประเภทลูกค้า</label><SelectWithOther options={dropdowns.customer_type || []} value={form.customerType} onChange={v => setForm(prev => ({ ...prev, customerType: v }))} /></div>
           <div><label className="label">รายละเอียด</label><input className="input" name="customerDetail" value={form.customerDetail} onChange={handleChange} /></div>
           <div><label className="label">พนักงานขาย</label><SelectWithOther options={dropdowns.sale_person || []} value={form.salePerson} onChange={v => setForm(prev => ({ ...prev, salePerson: v }))} /></div>

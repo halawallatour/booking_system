@@ -17,6 +17,8 @@ const CATEGORIES = [
   { key: 'sale_person', label: 'พนักงานขาย' }, { key: 'tour_name', label: 'ชื่อทัวร์' },
   { key: 'company_name', label: 'บริษัท' }, { key: 'hotel_name', label: 'โรงแรม' },
   { key: 'room_name', label: 'ประเภทห้อง' }, { key: 'booking_type', label: 'ช่องทางจอง' },
+  { key: 'taxi_job_type', label: 'ประเภทงานแท็กซี่' }, { key: 'taxi_vehicle_type', label: 'ประเภทรถแท็กซี่' },
+  { key: 'taxi_location', label: 'สถานที่รับ-ส่ง (แท็กซี่)' },
 ];
 
 function SortableRow({ item, index, onDelete }) {

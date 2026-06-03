@@ -44,6 +44,12 @@ export default function VoucherManagementPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // dynamic search: debounce the box into appliedSearch (resets to page 0) so results filter as you type
+  useEffect(() => {
+    const id = setTimeout(() => { setAppliedSearch(prev => { const next = search.trim(); if (next !== prev) setPage(0); return next; }); }, 300);
+    return () => clearTimeout(id);
+  }, [search]);
+
   // let the global header Refresh button trigger a reload of this page
   useEffect(() => {
     const onRefresh = () => loadData();
@@ -51,8 +57,8 @@ export default function VoucherManagementPage() {
     return () => window.removeEventListener('app:refresh', onRefresh);
   }, [loadData]);
 
-  // commit the search box into appliedSearch and reset to page 0; the effect above re-fetches once
-  function handleSearch(e) { e.preventDefault(); setPage(0); setAppliedSearch(search.trim()); }
+  // Enter just prevents a full page reload; filtering happens live via the debounce effect
+  function handleSearch(e) { e.preventDefault(); }
 
   async function handleDelete(cust) {
     const r = await Swal.fire({ title: 'ลบลูกค้า?', text: `${cust.item_id} — ${cust.guest_name}`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
@@ -81,7 +87,6 @@ export default function VoucherManagementPage() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link href="/database" className="btn btn-outline-primary">📋 ตั้งค่า Dropdown</Link>
-            <Link href="/sql-editor" className="btn btn-outline-primary">🛠️ SQL</Link>
             <Link href="/customers/new" className="btn btn-primary">＋ สร้างการจองใหม่</Link>
           </div>
         </div>

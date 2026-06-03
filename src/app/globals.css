@@ -76,7 +76,9 @@
 
 /* ---------- react-datepicker: match .input + brand theme ---------- */
 .react-datepicker-wrapper { width: 100%; }
-.react-datepicker-popper, .dp-popper { z-index: 60; }
+/* two-class selector beats the library's own `.react-datepicker-popper { z-index: 1 }`
+   regardless of stylesheet load order, so the calendar sits above the modal (z-50) */
+.react-datepicker-popper.dp-popper { z-index: 9999; }
 .react-datepicker {
   font-family: var(--font-sans);
   border: 1px solid var(--color-border);
