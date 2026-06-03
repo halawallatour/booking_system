@@ -74,35 +74,76 @@
   .action-btn:hover { background: var(--color-surface-hover); border-color: var(--color-text-muted); }
 }
 
-/* ---------- react-datepicker: match .input + brand theme ---------- */
+/* ---------- react-datepicker (pic1 style): clean range, gray band, month dropdown ---------- */
 .react-datepicker-wrapper { width: 100%; }
 /* two-class selector beats the library's own `.react-datepicker-popper { z-index: 1 }`
    regardless of stylesheet load order, so the calendar sits above the modal (z-50) */
 .react-datepicker-popper.dp-popper { z-index: 9999; }
-.react-datepicker {
+.react-datepicker.dp-cal {
   font-family: var(--font-sans);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.14);
+  padding: 10px;
 }
-.react-datepicker__header { background: var(--color-surface-alt); border-bottom: 1px solid var(--color-border); padding-top: 8px; }
-.react-datepicker__current-month, .react-datepicker__day-name { color: var(--color-text-secondary); }
-.react-datepicker__day:hover { background: var(--color-surface-hover); border-radius: 8px; }
-.react-datepicker__day--selected,
-.react-datepicker__day--range-start,
-.react-datepicker__day--range-end { background: var(--color-brand); color: #fff; border-radius: 8px; }
-.react-datepicker__day--in-range,
-.react-datepicker__day--in-selecting-range { background: var(--color-brand-bg); color: var(--color-brand-dark); }
-.react-datepicker__day--keyboard-selected { background: var(--color-brand-bg); color: var(--color-brand-dark); }
+.dp-cal .react-datepicker__header { background: transparent; border-bottom: none; padding: 0; }
+.dp-cal .react-datepicker__month { margin: 4px 0 0; }
+.dp-cal .react-datepicker__day-names { margin: 6px 0 2px; }
+.dp-cal .react-datepicker__day-name { color: var(--color-text-muted); font-size: 12px; font-weight: 600; width: 2.1rem; line-height: 1.6rem; margin: 0; }
+
+/* day cells: equal box, no margin so the range reads as a continuous band */
+.dp-cal .react-datepicker__day { width: 2.1rem; height: 2.1rem; line-height: 2.1rem; margin: 0; border-radius: 9999px; color: var(--color-text-primary); transition: background 0.1s; }
+.dp-cal .react-datepicker__day:hover { background: var(--color-surface-hover); border-radius: 9999px; }
+.dp-cal .react-datepicker__day--outside-month { color: var(--color-text-muted); opacity: 0.45; }
+.dp-cal .react-datepicker__day--disabled { color: var(--color-text-muted); opacity: 0.3; }
+
+/* in-between range = gray band (square so cells join up) */
+.dp-cal .react-datepicker__day--in-range,
+.dp-cal .react-datepicker__day--in-selecting-range { background: var(--color-surface-hover); color: var(--color-text-primary); border-radius: 0; }
+
+/* start / end / single selected = filled blue circle */
+.dp-cal .react-datepicker__day--selected,
+.dp-cal .react-datepicker__day--range-start,
+.dp-cal .react-datepicker__day--range-end,
+.dp-cal .react-datepicker__day--selecting-range-start,
+.dp-cal .react-datepicker__day--selecting-range-end { background: var(--color-brand); color: #fff; border-radius: 9999px; font-weight: 600; }
+.dp-cal .react-datepicker__day--range-start { border-top-left-radius: 9999px; border-bottom-left-radius: 9999px; }
+.dp-cal .react-datepicker__day--range-end { border-top-right-radius: 9999px; border-bottom-right-radius: 9999px; }
+.dp-cal .react-datepicker__day--keyboard-selected { background: var(--color-brand-bg); color: var(--color-brand-dark); border-radius: 9999px; }
+.dp-cal .react-datepicker__today, .dp-cal .react-datepicker__day--today { font-weight: 700; }
+
+/* month / year picker cells */
+.dp-cal .react-datepicker__month-text, .dp-cal .react-datepicker__year-text { padding: 8px 4px; border-radius: 10px; }
+.dp-cal .react-datepicker__month-text:hover, .dp-cal .react-datepicker__year-text:hover { background: var(--color-surface-hover); }
+.dp-cal .react-datepicker__month-text--selected, .dp-cal .react-datepicker__year-text--selected,
+.dp-cal .react-datepicker__month--selected { background: var(--color-brand) !important; color: #fff !important; border-radius: 10px; }
+
 .react-datepicker__close-icon::after { background: var(--color-text-muted); }
 .react-datepicker__time-list-item--selected { background: var(--color-brand) !important; }
+/* hide the year-picker's default Gregorian range text but keep its box so the
+   corner nav arrows still have room (cells already show พ.ศ.) — year picker only */
+.dp-cal .react-datepicker-year-header { color: transparent; font-size: 0; line-height: 0; padding: 14px 0; }
+.dp-cal .react-datepicker__navigation { top: 10px; }
+
+/* header: ‹  [เดือน ▾]  พ.ศ.  › */
+.dp-header { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 6px; }
+.dp-header-mid { display: flex; align-items: center; gap: 8px; }
+.dp-month-select { position: relative; display: inline-flex; align-items: center; }
+.dp-month-select select { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-weight: 700; font-size: 15px; color: var(--color-text-primary); cursor: pointer; padding: 2px 16px 2px 4px; border-radius: 8px; }
+.dp-month-select select:hover { background: var(--color-surface-hover); }
+.dp-month-select::after { content: '▾'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 10px; color: var(--color-text-muted); }
+.dp-year { font-weight: 700; font-size: 15px; color: var(--color-text-primary); }
 .dp-nav {
-  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--color-border);
-  background: var(--color-surface); color: var(--color-text-secondary); font-size: 16px; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 9999px; border: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-text-secondary); font-size: 17px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.1s;
 }
-.dp-nav:hover { background: var(--color-surface-hover); }
+.dp-nav:hover:not(:disabled) { background: var(--color-surface-hover); }
+.dp-nav:disabled { opacity: 0.3; cursor: default; }
+
+/* input with leading calendar icon */
+.dp-input-wrap { position: relative; width: 100%; }
+.dp-input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 14px; opacity: 0.7; }
 
 /* ---------- searchable combobox ---------- */
 .combobox { position: relative; width: 100%; }

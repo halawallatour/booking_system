@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-import { DateField, TimeField } from '@/components/DateField';
+import { DateField, TimeField, MonthField, YearField } from '@/components/DateField';
 import Combobox from '@/components/Combobox';
 
 /* ---------- helpers ---------- */
@@ -192,8 +192,8 @@ function MonthlyReport({ tours, hotels, month, setMonth }) {
     <div className="space-y-5">
       <div className="card p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <label className="font-semibold text-sm">Select Month:</label>
-          <input type="month" className="input w-auto" value={month} onChange={e => setMonth(e.target.value)} />
+          <label className="font-semibold text-sm">เลือกเดือน:</label>
+          <div className="w-52"><MonthField value={month} onChange={setMonth} /></div>
         </div>
         <div className="flex flex-wrap gap-3">
           <TotalCard label="TOTAL TOUR" value={totalTour} />
@@ -264,17 +264,12 @@ function YearlyReport({ tours, hotels, year, setYear }) {
     });
   }, [tours, hotels, year]);
   const grand = { t: sum(rows, r => r.tProfit), h: sum(rows, r => r.hProfit), all: sum(rows, r => r.total) };
-  const years = [];
-  const nowY = year ? parseInt(year) : new Date().getFullYear();
-  for (let y = nowY + 1; y >= nowY - 5; y--) years.push(y);
 
   return (
     <div className="space-y-5">
       <div className="card p-5 flex items-center gap-3">
-        <label className="font-semibold text-sm">Select Year:</label>
-        <select className="input w-auto" value={year} onChange={e => setYear(e.target.value)}>
-          {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
-        </select>
+        <label className="font-semibold text-sm">เลือกปี:</label>
+        <div className="w-44"><YearField value={year} onChange={v => v && setYear(v)} /></div>
       </div>
       <div className="card p-5">
         <h3 className="font-bold text-sm tracking-wide mb-3">YEARLY REPORT — กำไรรายเดือน {year}</h3>
