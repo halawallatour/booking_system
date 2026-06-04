@@ -12,14 +12,26 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const CATEGORIES = [
-  { key: 'nationality', label: 'สัญชาติ' }, { key: 'customer_type', label: 'ประเภทลูกค้า' },
-  { key: 'sale_person', label: 'พนักงานขาย' }, { key: 'tour_name', label: 'ชื่อทัวร์' },
-  { key: 'company_name', label: 'บริษัท' }, { key: 'hotel_name', label: 'โรงแรม' },
-  { key: 'room_name', label: 'ประเภทห้อง' }, { key: 'booking_type', label: 'ช่องทางจอง' },
-  { key: 'taxi_job_type', label: 'ประเภทงานแท็กซี่' }, { key: 'taxi_vehicle_type', label: 'ประเภทรถแท็กซี่' },
-  { key: 'taxi_location', label: 'สถานที่รับ-ส่ง (แท็กซี่)' },
+// หมวด dropdown แยกตามประเภทการใช้งาน (จองทัวร์ / จองโรงแรม / ข้อมูลลูกค้า / Taxi)
+const CATEGORY_GROUPS = [
+  { group: 'จองทัวร์', icon: '🗺️', items: [
+    { key: 'tour_name', label: 'ชื่อทัวร์' }, { key: 'company_name', label: 'บริษัท' },
+  ] },
+  { group: 'จองโรงแรม', icon: '🏨', items: [
+    { key: 'hotel_name', label: 'โรงแรม' }, { key: 'room_name', label: 'ประเภทห้อง' },
+    { key: 'booking_type', label: 'ช่องทางจอง' },
+  ] },
+  { group: 'ข้อมูลลูกค้า', icon: '👤', items: [
+    { key: 'nationality', label: 'สัญชาติ' }, { key: 'customer_type', label: 'ประเภทลูกค้า' },
+    { key: 'sale_person', label: 'พนักงานขาย' },
+  ] },
+  { group: 'Taxi Booking', icon: '🚕', items: [
+    { key: 'taxi_job_type', label: 'ประเภทงานแท็กซี่' }, { key: 'taxi_vehicle_type', label: 'ประเภทรถแท็กซี่' },
+    { key: 'taxi_location', label: 'สถานที่รับ-ส่ง (แท็กซี่)' },
+  ] },
 ];
+// แบนเป็นลิสต์เดียวสำหรับ init/loadAll และหา meta ของแท็บที่เลือก
+const CATEGORIES = CATEGORY_GROUPS.flatMap(g => g.items.map(it => ({ ...it, group: g.group, icon: g.icon })));
 
 function SortableRow({ item, index, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -92,6 +104,7 @@ export default function DatabasePage() {
   }
 
   const items = data[activeTab] || [];
+  const activeMeta = CATEGORIES.find(c => c.key === activeTab) || {};
 
   return (
     <div className="space-y-6">
@@ -100,8 +113,23 @@ export default function DatabasePage() {
         <Link href="/" className="btn btn-outline-primary w-full sm:w-auto justify-center">← กลับหน้าหลัก</Link>
       </div>
       <div className="card p-4 sm:p-6">
-        <div className="flex flex-wrap gap-2 mb-6">
-          {CATEGORIES.map(c => (<button key={c.key} onClick={() => setActiveTab(c.key)} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === c.key ? 'bg-[var(--color-brand)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'}`}>{c.label}</button>))}
+        <div className="space-y-4 mb-6">
+          {CATEGORY_GROUPS.map(g => (
+            <div key={g.group}>
+              <div className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <span>{g.icon}</span> {g.group}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {g.items.map(c => (<button key={c.key} onClick={() => setActiveTab(c.key)} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === c.key ? 'bg-[var(--color-brand)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'}`}>{c.label}</button>))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 text-sm mb-3 px-1">
+          <span className="text-[var(--color-text-muted)]">กำลังตั้งค่า:</span>
+          <span className="font-semibold text-[var(--color-brand)]">{activeMeta.icon} {activeMeta.group}</span>
+          <span className="text-[var(--color-text-muted)]">›</span>
+          <span className="font-semibold">{activeMeta.label}</span>
         </div>
         <form onSubmit={handleAdd} className="flex gap-2 mb-6">
           <input className="input flex-1 min-w-0" placeholder="เพิ่มรายการใหม่..." value={newValue} onChange={e => setNewValue(e.target.value)} />

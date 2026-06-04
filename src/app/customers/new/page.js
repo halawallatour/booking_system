@@ -21,8 +21,25 @@ export default function NewCustomerPage() {
   const [editingHotelIdx, setEditingHotelIdx] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const [copiedFrom, setCopiedFrom] = useState('');
+
   useEffect(() => { loadDropdowns(); }, []);
   async function loadDropdowns() { const { data } = await supabase.from('dropdowns').select('*').order('sort_order'); const grouped = {}; (data || []).forEach(d => { if (!grouped[d.category]) grouped[d.category] = []; grouped[d.category].push(d.value); }); setDropdowns(grouped); }
+
+  // "จองใหม่ให้ลูกค้าคนเดิม" (＋ ในหน้าแรก): /customers/new?from=<item_id>
+  // คัดลอกเฉพาะข้อมูลลูกค้ามาเป็น Voucher ใหม่ (เลข VC ใหม่) — Tour/Hotel เว้นว่างให้กรอกใหม่
+  useEffect(() => {
+    const from = new URLSearchParams(window.location.search).get('from');
+    if (!from) return;
+    (async () => {
+      const { data: c } = await supabase.from('customers').select('*').eq('item_id', from).single();
+      if (!c) { toast.error('ไม่พบลูกค้าต้นทาง ' + from); return; }
+      setForm({ guestName: c.guest_name || '', nationality: c.nationality || '', customerType: c.customer_type || '', customerDetail: c.customer_detail || '', salePerson: c.sale_person || '' });
+      setCopiedFrom(from);
+      toast.success(`คัดลอกข้อมูลลูกค้าจาก ${from} แล้ว — เพิ่มรายการจองใหม่ได้เลย`);
+      setShowTourModal(true);
+    })();
+  }, []);
   function handleChange(e) { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); }
   function addTour(d) { if (editingTourIdx !== null) { setTourBlocks(prev => prev.map((t, i) => i === editingTourIdx ? d : t)); setEditingTourIdx(null); } else { setTourBlocks(prev => [...prev, d]); } setShowTourModal(false); }
   function addHotel(d) { if (editingHotelIdx !== null) { setHotelBlocks(prev => prev.map((h, i) => i === editingHotelIdx ? d : h)); setEditingHotelIdx(null); } else { setHotelBlocks(prev => [...prev, d]); } setShowHotelModal(false); }
@@ -63,6 +80,7 @@ export default function NewCustomerPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3"><button onClick={() => router.push('/')} className="btn btn-ghost">← กลับ</button><h2 className="text-2xl font-bold">สร้างการจองใหม่</h2></div>
+      {copiedFrom && <div className="text-sm text-[var(--color-info)] bg-[var(--color-info-light)] border border-[var(--color-info)]/30 rounded-lg px-4 py-2.5">📋 คัดลอกข้อมูลลูกค้าจาก <b>{copiedFrom}</b> มาแล้ว — ระบบจะสร้างเป็น Voucher ใหม่ (เลขใหม่) เมื่อกดบันทึก</div>}
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         <h3 className="font-semibold text-base text-[var(--color-text-secondary)]">ข้อมูลลูกค้า</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

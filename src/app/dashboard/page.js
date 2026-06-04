@@ -453,12 +453,16 @@ function TaxiBooking({ dropdowns }) {
           <div><label className="label">🚐 ประเภทรถ</label><Combobox options={dropdowns.taxi_vehicle_type || []} value={form.vehicle_type} onChange={v => set('vehicle_type', v)} /></div>
         </div>
 
-        <div className="flex gap-5">
-          {[['domestic', 'ดอม'], ['international', 'อินเตอร์']].map(([val, lbl]) => (
-            <label key={val} className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="radio" name="trip_scope" checked={form.trip_scope === val} onChange={() => set('trip_scope', val)} />{lbl}
-            </label>
-          ))}
+        <div>
+          <label className="label">ปลายทาง</label>
+          <div className="inline-flex p-1 rounded-xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] w-full">
+            {[['domestic', '🏠 ในประเทศ (ดอม)'], ['international', '🌍 ต่างประเทศ (อินเตอร์)']].map(([val, lbl]) => (
+              <button
+                type="button" key={val} onClick={() => set('trip_scope', val)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${form.trip_scope === val ? 'bg-[var(--color-brand)] text-white shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
+              >{lbl}</button>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] p-3 space-y-3">
@@ -504,12 +508,16 @@ function TaxiCard({ b, index, onEdit, onClear, onDelete }) {
           <span className="font-bold">{b.customer_name}</span>
           <span className="text-sm text-[var(--color-text-muted)]">({b.pax || 1} ท่าน)</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={onEdit} className="action-btn" title="แก้ไข">✏️</button>
           <button onClick={onDelete} className="action-btn text-[var(--color-danger)]" title="ลบ">🗑️</button>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none ml-1">
-            <input type="checkbox" checked={b.status === 'cleared'} onChange={onClear} /> เคลียร์
-          </label>
+          <button
+            onClick={onClear}
+            className={`ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${b.status === 'cleared'
+              ? 'border-[var(--color-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface-alt)] hover:bg-[var(--color-surface-hover)]'
+              : 'border-[var(--color-success)] text-[var(--color-success)] bg-[var(--color-success-light)] hover:bg-[var(--color-success)] hover:text-white'}`}
+            title={b.status === 'cleared' ? 'กลับไปรอจัดรถ' : 'ทำเครื่องหมายว่าจัดรถแล้ว'}
+          >{b.status === 'cleared' ? '↩ กลับไปรอ' : '✓ เคลียร์งาน'}</button>
         </div>
       </div>
       <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-sm mt-2">

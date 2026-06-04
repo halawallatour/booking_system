@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { voucherEnabled, generateVoucher, downloadPdfBase64 } from '@/lib/voucher';
 
 const PAGE_SIZE = 20;
 
@@ -70,9 +71,55 @@ export default function VoucherManagementPage() {
     loadData();
   }
 
-  // TODO: เชื่อมกับเทมเพลต Google Slide เพื่อสร้าง PDF voucher (รอ template จากผู้ใช้)
-  function handlePrint(cust) {
-    toast('ฟีเจอร์ปริ้น PDF กำลังพัฒนา — จะเชื่อมกับ Google Slide', { icon: '🖨️' });
+  // ปริ้น Voucher: ถามชนิด (Tour/Hotel/ทั้งคู่) → ก็อป Slide template + เติมข้อมูล → ได้ทั้ง Slides + PDF
+  async function handlePrint(cust) {
+    if (!voucherEnabled()) { toast.error('ยังไม่ได้ตั้งค่า Google Slides (NEXT_PUBLIC_GAS_VOUCHER_URL) — ดู gas/VOUCHER_README.md'); return; }
+    const tours = (cust.tours || []).filter(t => t.status === 'active');
+    const hotels = (cust.hotels || []).filter(h => h.status === 'active');
+    if (!tours.length && !hotels.length) { toast('ลูกค้านี้ยังไม่มีรายการ Tour/Hotel ให้ปริ้น', { icon: 'ℹ️' }); return; }
+
+    // ให้เลือกชนิดทุกครั้ง (เฉพาะชนิดที่มีข้อมูล)
+    const opts = {};
+    if (tours.length) opts.tour = `🗺️ Tour Voucher (${tours.length} รายการ)`;
+    if (hotels.length) opts.hotel = `🏨 Hotel Voucher (${hotels.length} รายการ)`;
+    if (tours.length && hotels.length) opts.both = '📑 ทั้ง Tour และ Hotel';
+    const onlyKey = Object.keys(opts)[0];
+
+    const { value: choice } = await Swal.fire({
+      title: `พิมพ์ Voucher — ${cust.item_id}`,
+      input: 'radio',
+      inputOptions: opts,
+      inputValue: Object.keys(opts).length === 1 ? onlyKey : undefined,
+      showCancelButton: true,
+      confirmButtonText: 'สร้าง Voucher',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: 'var(--color-brand)',
+      inputValidator: (v) => (!v ? 'เลือกชนิดก่อนนะครับ' : undefined),
+    });
+    if (!choice) return;
+
+    const types = choice === 'both' ? ['tour', 'hotel'] : [choice];
+    Swal.fire({ title: 'กำลังสร้าง Voucher...', html: 'ก็อปสไลด์ + เติมข้อมูล + แปลง PDF', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const results = [];
+    try {
+      for (const type of types) {
+        const items = type === 'tour' ? tours : hotels;
+        const data = await generateVoucher({ type, customer: cust, items });
+        downloadPdfBase64(data.pdfBase64, data.name);
+        results.push(data);
+      }
+    } catch (err) {
+      Swal.fire({ title: 'สร้างไม่สำเร็จ', text: err.message, icon: 'error' });
+      return;
+    }
+
+    Swal.fire({
+      title: 'สร้าง Voucher เรียบร้อย ✓',
+      icon: 'success',
+      html: `<div style="text-align:left">ดาวน์โหลด PDF ให้อัตโนมัติแล้ว และเก็บไฟล์ Slides ไว้ใน Drive:<br/><br/>${results.map(r => `📄 <b>${r.name}</b><br/><a href="${r.slidesUrl}" target="_blank" rel="noopener" style="color:#2563eb">เปิดใน Google Slides ↗</a>`).join('<br/><br/>')}</div>`,
+      confirmButtonText: 'เรียบร้อย',
+    });
   }
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -129,7 +176,7 @@ export default function VoucherManagementPage() {
                       {activeTours.length === 0 && activeHotels.length === 0 && <span className="text-sm text-[var(--color-text-muted)]">— ยังไม่มีรายการ</span>}
                     </div></td>
                     <td><div className="flex gap-1 justify-end">
-                      <Link href={`/customers/${cust.item_id}?add=true`} className="action-btn" title="เพิ่มรายการลูกค้าคนเดิม">＋</Link>
+                      <Link href={`/customers/new?from=${cust.item_id}`} className="action-btn" title="จองใหม่ให้ลูกค้าคนเดิม (สร้าง Voucher ใหม่)">＋</Link>
                       <Link href={`/customers/${cust.item_id}`} className="action-btn" title="แก้ไขรายการ">✏️</Link>
                       <button onClick={() => handlePrint(cust)} className="action-btn" title="ปริ้น PDF">🖨️</button>
                       <button onClick={() => handleDelete(cust)} className="action-btn text-[var(--color-danger)]" title="ลบรายการ">🗑️</button>
