@@ -194,12 +194,12 @@ export default function BookingWizard({
         <div className="card p-5 space-y-3">
           <h3 className="font-bold text-sm">รายการในบิล ({total})</h3>
           {hotels.map((h, i) => (
-            <BillRow key={'h' + i} icon="🏨" color="var(--color-brand)"
+            <BillRow key={'h' + i} icon="🏨" tint="bg-[var(--color-brand-bg)]"
               title={h.hotelName || 'โรงแรม'} sub={`${h.roomName || ''} · ${h.checkIn || '?'} → ${h.checkOut || '?'} · ${h.totalNight || 0} คืน`}
               amount={h.saleAmount} onEdit={() => editItem('hotel', i)} onRemove={() => removeItem('hotel', i)} />
           ))}
           {tours.map((t, i) => (
-            <BillRow key={'t' + i} icon="🗺️" color="var(--color-success)"
+            <BillRow key={'t' + i} icon="🗺️" tint="bg-[var(--color-success-light)]"
               title={t.tourName || t.tourDetail || 'ทัวร์'} sub={`${t.companyName || ''} · ${t.tourDate || 'ไม่ระบุวันที่'} · ${(parseInt(t.adult) || 0)}A ${(parseInt(t.child) || 0)}C${t.addToTaxi ? ' · 🚕 ส่งเข้า Taxi' : ''}`}
               amount={t.saleAmount} onEdit={() => editItem('tour', i)} onRemove={() => removeItem('tour', i)} />
           ))}
@@ -223,11 +223,11 @@ export default function BookingWizard({
 }
 
 /* ---------- bill row ---------- */
-function BillRow({ icon, color, title, sub, amount, onEdit, onRemove }) {
+function BillRow({ icon, tint, title, sub, amount, onEdit, onRemove }) {
   return (
     <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]">
       <div className="flex items-center gap-3 min-w-0">
-        <span className="stat-icon shrink-0" style={{ width: 36, height: 36, background: color, color: '#fff' }}>{icon}</span>
+        <span className={`shrink-0 inline-flex items-center justify-center rounded-xl ${tint}`} style={{ width: 38, height: 38, fontSize: 18 }}>{icon}</span>
         <div className="min-w-0">
           <div className="font-semibold truncate">{title}</div>
           <div className="text-xs text-[var(--color-text-muted)] truncate">{sub}</div>
