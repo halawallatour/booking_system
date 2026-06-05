@@ -158,9 +158,6 @@ function Menu({ items, view, onPick }) {
 function CountPill({ n }) {
   return <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[var(--color-brand-bg)] text-[var(--color-brand)]">{n} รายการ</span>;
 }
-function NoteBanner({ children }) {
-  return <p className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-3 py-2">ℹ️ {children}</p>;
-}
 
 /* ---------- OVERVIEW (interim — รอ pic1) ---------- */
 function OverviewView({ tours, hotels, custCount }) {
@@ -168,7 +165,6 @@ function OverviewView({ tours, hotels, custCount }) {
   const profit = sum(tours, profitOf) + sum(hotels, profitOf);
   return (
     <div className="space-y-5">
-      <NoteBanner>หน้า Overview นี้เป็นภาพรวม KPI ชั่วคราว — รอรูป <b>pic1</b> เพื่อปรับให้ตรงดีไซน์</NoteBanner>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="stat-card"><div className="stat-icon bg-[var(--color-brand-bg)] text-[var(--color-brand)]">👥</div><div><div className="stat-label">Customers</div><div className="stat-value">{custCount}</div></div></div>
         <div className="stat-card"><div className="stat-icon bg-[var(--color-info-light)] text-[var(--color-info)]">🗺️</div><div><div className="stat-label">Active Tours</div><div className="stat-value">{tours.length}</div></div></div>
