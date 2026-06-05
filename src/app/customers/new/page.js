@@ -4,103 +4,99 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
-import TourModal from '@/components/TourModal';
-import HotelModal from '@/components/HotelModal';
-import SelectWithOther from '@/components/SelectWithOther';
+import BookingWizard from '@/components/BookingWizard';
 import { backupCustomerById } from '@/lib/backup';
+import { toTourRow, toHotelRow, toTaxiRow } from '@/lib/bookingRows';
+import { printVoucherDialog } from '@/lib/voucher';
+
+const BLANK_CUSTOMER = { guestName: '', phone: '', nationality: '', customerType: '', customerDetail: '', salePerson: '' };
 
 export default function NewCustomerPage() {
   const router = useRouter();
   const [dropdowns, setDropdowns] = useState({});
-  const [form, setForm] = useState({ guestName: '', nationality: '', customerType: '', customerDetail: '', salePerson: '' });
-  const [tourBlocks, setTourBlocks] = useState([]);
-  const [hotelBlocks, setHotelBlocks] = useState([]);
-  const [showTourModal, setShowTourModal] = useState(false);
-  const [showHotelModal, setShowHotelModal] = useState(false);
-  const [editingTourIdx, setEditingTourIdx] = useState(null);
-  const [editingHotelIdx, setEditingHotelIdx] = useState(null);
+  const [initialCustomer, setInitialCustomer] = useState(BLANK_CUSTOMER);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [copiedFrom, setCopiedFrom] = useState('');
+  useEffect(() => { init(); }, []);
 
-  useEffect(() => { loadDropdowns(); }, []);
-  async function loadDropdowns() { const { data } = await supabase.from('dropdowns').select('*').order('sort_order'); const grouped = {}; (data || []).forEach(d => { if (!grouped[d.category]) grouped[d.category] = []; grouped[d.category].push(d.value); }); setDropdowns(grouped); }
+  async function init() {
+    const { data } = await supabase.from('dropdowns').select('*').order('sort_order');
+    const grouped = {}; (data || []).forEach(d => { (grouped[d.category] ||= []).push(d.value); });
+    setDropdowns(grouped);
 
-  // "จองใหม่ให้ลูกค้าคนเดิม" (＋ ในหน้าแรก): /customers/new?from=<item_id>
-  // คัดลอกเฉพาะข้อมูลลูกค้ามาเป็น Voucher ใหม่ (เลข VC ใหม่) — Tour/Hotel เว้นว่างให้กรอกใหม่
-  useEffect(() => {
+    // "จองใหม่ให้ลูกค้าคนเดิม": /customers/new?from=<item_id> → ก็อปเฉพาะข้อมูลลูกค้า
     const from = new URLSearchParams(window.location.search).get('from');
-    if (!from) return;
-    (async () => {
+    if (from) {
       const { data: c } = await supabase.from('customers').select('*').eq('item_id', from).single();
-      if (!c) { toast.error('ไม่พบลูกค้าต้นทาง ' + from); return; }
-      setForm({ guestName: c.guest_name || '', nationality: c.nationality || '', customerType: c.customer_type || '', customerDetail: c.customer_detail || '', salePerson: c.sale_person || '' });
-      setCopiedFrom(from);
-      toast.success(`คัดลอกข้อมูลลูกค้าจาก ${from} แล้ว — เพิ่มรายการจองใหม่ได้เลย`);
-      setShowTourModal(true);
-    })();
-  }, []);
-  function handleChange(e) { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); }
-  function addTour(d) { if (editingTourIdx !== null) { setTourBlocks(prev => prev.map((t, i) => i === editingTourIdx ? d : t)); setEditingTourIdx(null); } else { setTourBlocks(prev => [...prev, d]); } setShowTourModal(false); }
-  function addHotel(d) { if (editingHotelIdx !== null) { setHotelBlocks(prev => prev.map((h, i) => i === editingHotelIdx ? d : h)); setEditingHotelIdx(null); } else { setHotelBlocks(prev => [...prev, d]); } setShowHotelModal(false); }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.guestName.trim()) { toast.error('กรุณาใส่ชื่อลูกค้า'); return; }
-    setSaving(true);
-    let createdCustomerId = null;
-    try {
-      const { data: itemIdData, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'VC', p_counter: 'customer' });
-      if (idErr) throw idErr;
-      const { data: customer, error: custErr } = await supabase.from('customers').insert({ item_id: itemIdData, guest_name: form.guestName.trim(), nationality: form.nationality, customer_type: form.customerType, customer_detail: form.customerDetail, sale_person: form.salePerson }).select('id').single();
-      if (custErr) throw custErr;
-      createdCustomerId = customer.id;
-      for (const t of tourBlocks) {
-        const { data: tid, error: tidErr } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' });
-        if (tidErr) throw tidErr;
-        const { error } = await supabase.from('tours').insert({ tour_id: tid, customer_id: customer.id, tour_date: t.tourDate || null, tour_detail: t.tourDetail, tour_name: t.tourName, company_name: t.companyName, adult: parseInt(t.adult) || 0, child: parseInt(t.child) || 0, pickup_time: t.pickupTime, hotel_name: t.hotelName, room_number: t.roomNumber, note: t.note, operator_contact: t.operatorContact, sale_amount: parseFloat(t.saleAmount) || 0, net_amount: parseFloat(t.netAmount) || 0 });
-        if (error) throw error;
+      if (c) {
+        setInitialCustomer({ guestName: c.guest_name || '', phone: c.phone || '', nationality: c.nationality || '', customerType: c.customer_type || '', customerDetail: c.customer_detail || '', salePerson: c.sale_person || '' });
+        toast.success(`คัดลอกข้อมูลลูกค้าจาก ${from} แล้ว — ระบบจะสร้างเป็น Voucher ใหม่`);
+      } else {
+        toast.error('ไม่พบลูกค้าต้นทาง ' + from);
       }
-      for (const h of hotelBlocks) {
-        const { data: hid, error: hidErr } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' });
-        if (hidErr) throw hidErr;
-        const { error } = await supabase.from('hotels').insert({ hotel_id: hid, customer_id: customer.id, check_in: h.checkIn || null, check_out: h.checkOut || null, total_night: parseInt(h.totalNight) || 0, hotel_name: h.hotelName, room_name: h.roomName, total_room: parseInt(h.totalRoom) || 1, confirmation_number: h.confirmationNumber, booking_type: h.bookingType, note: h.note, breakfast: h.breakfast, sale_amount: parseFloat(h.saleAmount) || 0, net_amount: parseFloat(h.netAmount) || 0 });
-        if (error) throw error;
-      }
-      backupCustomerById(itemIdData); // สำรองขึ้น Google Sheet (fire-and-forget)
-      await Swal.fire({ title: 'บันทึกสำเร็จ!', text: `สร้างลูกค้า ${itemIdData} เรียบร้อย`, icon: 'success', timer: 1500, showConfirmButton: false });
-      router.push('/');
-    } catch (err) {
-      // roll back the half-created customer (cascade removes any tours/hotels already inserted) so we don't leave orphans
-      if (createdCustomerId) { await supabase.from('customers').delete().eq('id', createdCustomerId); }
-      toast.error('Error: ' + err.message);
-    } finally { setSaving(false); }
+    }
+    setLoading(false);
   }
 
+  async function handleSave({ customer, tours, hotels }, action) {
+    setSaving(true);
+    let createdId = null;
+    try {
+      const { data: vc, error: idErr } = await supabase.rpc('next_id', { p_prefix: 'VC', p_counter: 'customer' });
+      if (idErr) throw idErr;
+      const { data: cust, error: custErr } = await supabase.from('customers').insert({
+        item_id: vc, guest_name: customer.guestName.trim(), phone: customer.phone,
+        nationality: customer.nationality, customer_type: customer.customerType,
+        customer_detail: customer.customerDetail, sale_person: customer.salePerson,
+      }).select('id').single();
+      if (custErr) throw custErr;
+      createdId = cust.id;
+
+      for (const t of tours) {
+        const { data: tid, error: e1 } = await supabase.rpc('next_id', { p_prefix: 'TOUR', p_counter: 'tour' });
+        if (e1) throw e1;
+        const { error } = await supabase.from('tours').insert({ ...toTourRow(t), tour_id: tid, customer_id: cust.id });
+        if (error) throw error;
+      }
+      for (const h of hotels) {
+        const { data: hid, error: e2 } = await supabase.rpc('next_id', { p_prefix: 'HTL', p_counter: 'hotel' });
+        if (e2) throw e2;
+        const { error } = await supabase.from('hotels').insert({ ...toHotelRow(h), hotel_id: hid, customer_id: cust.id });
+        if (error) throw error;
+      }
+
+      // ทัวร์ที่ติ๊ก "เพิ่มลง Taxi Booking"
+      const taxiRows = tours.filter(t => t.addToTaxi).map(t => toTaxiRow(t, customer));
+      if (taxiRows.length) await supabase.from('taxi_bookings').insert(taxiRows);
+
+      backupCustomerById(vc); // fire-and-forget
+
+      if (action === 'voucher') {
+        toast.success(`บันทึก ${vc} แล้ว`);
+        await printVoucherDialog({ item_id: vc, guest_name: customer.guestName, nationality: customer.nationality, customer_detail: customer.customerDetail, tours: tours.map(toTourRow), hotels: hotels.map(toHotelRow) });
+      } else {
+        await Swal.fire({ title: 'บันทึกสำเร็จ!', text: `สร้างลูกค้า ${vc} เรียบร้อย`, icon: 'success', timer: 1500, showConfirmButton: false });
+      }
+      router.push('/');
+    } catch (err) {
+      if (createdId) await supabase.from('customers').delete().eq('id', createdId); // ลบทิ้งกัน orphan (cascade)
+      toast.error('Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-3 border-[var(--color-brand)] border-t-transparent rounded-full animate-spin" /></div>;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3"><button onClick={() => router.push('/')} className="btn btn-ghost">← กลับ</button><h2 className="text-2xl font-bold">สร้างการจองใหม่</h2></div>
-      {copiedFrom && <div className="text-sm text-[var(--color-info)] bg-[var(--color-info-light)] border border-[var(--color-info)]/30 rounded-lg px-4 py-2.5">📋 คัดลอกข้อมูลลูกค้าจาก <b>{copiedFrom}</b> มาแล้ว — ระบบจะสร้างเป็น Voucher ใหม่ (เลขใหม่) เมื่อกดบันทึก</div>}
-      <form onSubmit={handleSubmit} className="card p-6 space-y-6">
-        <h3 className="font-semibold text-base text-[var(--color-text-secondary)]">ข้อมูลลูกค้า</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div><label className="label">ชื่อลูกค้า</label><input className="input" name="guestName" value={form.guestName} onChange={handleChange} /></div>
-          <div><label className="label">สัญชาติ</label><SelectWithOther options={dropdowns.nationality || []} value={form.nationality} onChange={v => setForm(prev => ({ ...prev, nationality: v }))} /></div>
-          <div><label className="label">ประเภทลูกค้า</label><SelectWithOther options={dropdowns.customer_type || []} value={form.customerType} onChange={v => setForm(prev => ({ ...prev, customerType: v }))} /></div>
-          <div><label className="label">รายละเอียด</label><input className="input" name="customerDetail" value={form.customerDetail} onChange={handleChange} /></div>
-          <div><label className="label">พนักงานขาย</label><SelectWithOther options={dropdowns.sale_person || []} value={form.salePerson} onChange={v => setForm(prev => ({ ...prev, salePerson: v }))} /></div>
-        </div>
-        <hr className="border-[var(--color-border)]" />
-        <div className="flex flex-col sm:flex-row gap-2">
-          <button type="button" className="btn btn-outline-primary w-full sm:w-auto justify-center" onClick={() => { setEditingTourIdx(null); setShowTourModal(true); }}>🚌 เพิ่ม Tour</button>
-          <button type="button" className="btn btn-outline-primary w-full sm:w-auto justify-center" onClick={() => { setEditingHotelIdx(null); setShowHotelModal(true); }}>🏨 เพิ่ม Hotel</button>
-        </div>
-        {tourBlocks.length > 0 && <div className="space-y-3"><h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🗺️ Tour Bookings</h4>{tourBlocks.map((t, i) => (<div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]"><div><p className="font-medium">{t.tourName || 'Tour'} — {t.tourDate || 'No date'}</p><p className="text-sm text-[var(--color-text-secondary)]">{t.companyName} · {t.adult || 0}A {t.child || 0}C</p></div><div className="flex gap-1"><button type="button" className="action-btn" onClick={() => { setEditingTourIdx(i); setShowTourModal(true); }}>✏️</button><button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => setTourBlocks(prev => prev.filter((_, j) => j !== i))}>✕</button></div></div>))}</div>}
-        {hotelBlocks.length > 0 && <div className="space-y-3"><h4 className="font-semibold text-sm text-[var(--color-text-secondary)]">🏨 Hotel Bookings</h4>{hotelBlocks.map((h, i) => (<div key={i} className="flex items-center justify-between p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)]"><div><p className="font-medium">{h.hotelName || 'Hotel'} — {h.roomName || ''}</p><p className="text-sm text-[var(--color-text-secondary)]">{h.checkIn || '?'} → {h.checkOut || '?'} · {h.totalNight || 0}N</p></div><div className="flex gap-1"><button type="button" className="action-btn" onClick={() => { setEditingHotelIdx(i); setShowHotelModal(true); }}>✏️</button><button type="button" className="action-btn text-[var(--color-danger)]" onClick={() => setHotelBlocks(prev => prev.filter((_, j) => j !== i))}>✕</button></div></div>))}</div>}
-        <div className="text-right pt-4"><button type="submit" disabled={saving} className="btn btn-primary text-base px-8 py-3">{saving ? 'กำลังบันทึก...' : '✅ ยืนยันและบันทึก'}</button></div>
-      </form>
-      {showTourModal && <TourModal dropdowns={dropdowns} initial={editingTourIdx !== null ? tourBlocks[editingTourIdx] : null} onSave={addTour} onClose={() => { setShowTourModal(false); setEditingTourIdx(null); }} />}
-      {showHotelModal && <HotelModal dropdowns={dropdowns} initial={editingHotelIdx !== null ? hotelBlocks[editingHotelIdx] : null} onSave={addHotel} onClose={() => { setShowHotelModal(false); setEditingHotelIdx(null); }} />}
-    </div>
+    <BookingWizard
+      mode="create"
+      dropdowns={dropdowns}
+      initialCustomer={initialCustomer}
+      onCancel={() => router.push('/')}
+      onSave={handleSave}
+      busy={saving}
+    />
   );
 }

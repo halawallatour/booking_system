@@ -120,7 +120,7 @@ export default function DatabasePage() {
                 <span>{g.icon}</span> {g.group}
               </div>
               <div className="flex flex-wrap gap-2">
-                {g.items.map(c => (<button key={c.key} onClick={() => setActiveTab(c.key)} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === c.key ? 'bg-[var(--color-brand)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'}`}>{c.label}</button>))}
+                {g.items.map(c => (<button key={c.key} onClick={() => setActiveTab(c.key)} className={`cursor-pointer px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === c.key ? 'bg-[var(--color-brand)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'}`}>{c.label}</button>))}
               </div>
             </div>
           ))}

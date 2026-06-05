@@ -40,9 +40,13 @@ Apps Script → สคริปต์:
 `{{tour_date}}` `{{tour_detail}}` `{{adult_child}}` `{{company}}` `{{hotel}}` `{{room_no}}` `{{pickup_time}}` `{{note}}`
 
 **Hotel Voucher — แต่ละแถวในตาราง:**
-`{{stay_range}}` `{{night}}` `{{hotel_name}}` `{{room_type}}` `{{room}}` `{{breakfast}}` `{{confirmation_number}}` `{{note}}`
+`{{stay_range}}` `{{night}}` `{{hotel_name}}` `{{room_type}}` `{{room}}` `{{detail}}` `{{breakfast}}` `{{confirmation_number}}` `{{note}}`
 
 > token เดียวกันใส่ซ้ำได้ทั้ง 4 แถว — สคริปต์เติมแยกทีละแถวให้เอง
+>
+> วันที่: `{{tour_date}}` = `15-Jan-26`, `{{stay_range}}` = `15-Jan-26 to 18-Jan-26`, `{{issue_date}}` = `05-Jan-2026`
+>
+> ทัวร์แบบ Airport Transfer: `{{hotel}}` = "ต้นทาง → ปลายทาง", `{{room_no}}` = เที่ยวบิน (Flight No.) โดยอัตโนมัติ
 
 ## วิธี deploy (ทำครั้งเดียว)
 
